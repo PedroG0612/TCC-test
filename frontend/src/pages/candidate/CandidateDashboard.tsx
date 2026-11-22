@@ -38,7 +38,7 @@ export function CandidateDashboard() {
         subtitle="Veja o que está acontecendo na sua busca por vagas."
         actions={
           <>
-            <Link to="/matching" className="btn-accent">Ver vagas para mim</Link>
+            <Link to="/jobs" className="btn-accent">Ver vagas para mim</Link>
             <Link to="/jobs" className="btn-outline">Buscar vagas</Link>
           </>
         }
@@ -64,14 +64,14 @@ export function CandidateDashboard() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">Vagas para seu perfil</h2>
-            <Link to="/matching" className="text-sm font-semibold text-brand-600 hover:underline">Ver todas</Link>
+            <Link to="/jobs" className="text-sm font-semibold text-brand-600 hover:underline">Ver todas</Link>
           </div>
           {matches.length === 0 ? (
             <p className="card p-6 text-sm text-slate-500">Nenhuma recomendação ainda — continue navegando pelas vagas.</p>
           ) : (
             <div className="space-y-3">
               {matches.map((m) => (
-                <Link key={m.job.id} to={`/jobs/${m.job.id}`} className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-card-hover">
+                <Link key={m.job.id} to={`/jobs?job=${m.job.id}`} className="card flex items-center justify-between gap-3 p-4 transition-shadow hover:shadow-card-hover">
                   <div>
                     <p className="font-semibold text-slate-900">{m.job.title}</p>
                     <p className="text-sm text-slate-500">{m.job.company_name} · {m.job.location}</p>

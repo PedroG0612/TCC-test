@@ -36,7 +36,7 @@ from api.serializers import (
     UserSerializer,
 )
 from jobs.filters import ApplicationFilter, JobFilter
-from jobs.models import Application, ApplicationStatusHistory, Job
+from jobs.models import Application, ApplicationStatusHistory, Job, SavedJob
 from matching import engine as matching_engine
 
 User = get_user_model()
@@ -468,7 +468,21 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         profile = self.request.user.candidate_profile
-        serializer.save(candidate=profile)
+        application = serializer.save(candidate=profile)
+        # Notify the company owner about the new application.
+        from social.models import Notification
+        from social.services import notify
+
+        company_user = application.job.company.user
+        candidate_name = (
+            self.request.user.get_full_name() or self.request.user.username
+        )
+        notify(
+            company_user, self.request.user,
+            Notification.Type.APPLICATION_RECEIVED,
+            f'{candidate_name} candidatou-se à vaga "{application.job.title}".',
+            link='/company/applications',
+        )
 
     def _can_manage(self, application):
         user = self.request.user
@@ -497,10 +511,53 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 to_status=new_status,
                 changed_by=request.user,
             )
+            # Notify the candidate about the status change.
+            from social.models import Notification
+            from social.services import notify
+
+            candidate_user = instance.candidate.user
+            status_label = instance.get_status_display()
+            notify(
+                candidate_user, request.user,
+                Notification.Type.APPLICATION_STATUS,
+                f'Sua candidatura para "{instance.job.title}" foi atualizada: {status_label}.',
+                link='/applications',
+            )
         return Response(ApplicationSerializer(instance, context={'request': request}).data)
 
     def update(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+
+# ---------------------------------------------------------------------------
+# Saved jobs
+# ---------------------------------------------------------------------------
+class SavedJobViewSet(viewsets.ViewSet):
+    """Jobs saved/bookmarked by the authenticated user."""
+
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        saves = (
+            SavedJob.objects.filter(user=request.user)
+            .select_related('job__company')
+            .prefetch_related('job__essential_skills', 'job__desired_skills')
+            .order_by('-created_at')
+        )
+        data = [
+            {**JobSerializer(s.job, context={'request': request}).data, 'saved_at': s.created_at}
+            for s in saves
+        ]
+        return Response(data)
+
+    def create(self, request):
+        """Toggle save state for a job: POST {job: <id>} -> {saved: bool}."""
+        job_id = request.data.get('job')
+        job = get_object_or_404(Job.objects.all(), pk=job_id)
+        saved, created = SavedJob.objects.get_or_create(user=request.user, job=job)
+        if not created:
+            saved.delete()
+        return Response({'saved': created, 'job': job.pk})
 
 
 # ---------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -11,6 +12,8 @@ from feed.serializers import (
     PostCreateSerializer,
     PostSerializer,
 )
+
+User = get_user_model()
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -43,10 +46,37 @@ class PostViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         post = serializer.save()
+        self._notify_connections(request.user, post)
         return Response(
             PostSerializer(post, context={'request': request}).data,
             status=status.HTTP_201_CREATED,
         )
+
+    @staticmethod
+    def _notify_connections(author, post):
+        """Notify the author's accepted connections about the new post."""
+        from social.models import Connection, Notification
+        from social.services import notify
+
+        connected_ids = set(
+            Connection.objects.filter(
+                requester=author, status=Connection.Status.ACCEPTED
+            ).values_list('addressee_id', flat=True)
+        ) | set(
+            Connection.objects.filter(
+                addressee=author, status=Connection.Status.ACCEPTED
+            ).values_list('requester_id', flat=True)
+        )
+        if not connected_ids:
+            return
+        name = author.get_full_name() or author.username
+        recipients = User.objects.filter(pk__in=connected_ids)
+        for recipient in recipients:
+            notify(
+                recipient, author, Notification.Type.POST_CREATED,
+                f'{name} publicou uma nova atualização.',
+                link='/home',
+            )
 
     def get_permissions(self):
         # Read is public-ish (feed requires login on frontend, but API allows

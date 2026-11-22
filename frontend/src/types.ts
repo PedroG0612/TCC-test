@@ -105,6 +105,7 @@ export interface Job {
   company_logo: string | null
   application_count?: number
   has_applied?: boolean
+  is_saved?: boolean
   created_at: string
   updated_at: string
 }
@@ -264,4 +265,62 @@ export interface PublicProfile {
     category: string
     created_at: string
   }[]
+}
+
+// ---------------------------------------------------------------------------
+// Social: connections, messaging, notifications
+// ---------------------------------------------------------------------------
+export interface Connection {
+  id: number
+  requester: PostAuthor
+  addressee: PostAuthor
+  status: 'pending' | 'accepted' | 'rejected'
+  created_at: string
+  updated_at: string
+}
+
+export interface ConnectionLists {
+  accepted: Connection[]
+  incoming: Connection[]
+  outgoing: Connection[]
+}
+
+export type ConnectionState = 'none' | 'incoming' | 'outgoing' | 'connected'
+
+export interface AppNotification {
+  id: number
+  type: string
+  type_display: string
+  text: string
+  link: string
+  is_read: boolean
+  actor: PostAuthor | null
+  created_at: string
+}
+
+export interface NotificationPage {
+  count: number
+  unread_count: number
+  results: AppNotification[]
+}
+
+export interface MessageItem {
+  id: number
+  sender: PostAuthor
+  text: string
+  created_at: string
+  read_at: string | null
+}
+
+export interface ConversationItem {
+  id: number
+  other_user: PostAuthor | null
+  last_message: {
+    id: number
+    text: string
+    sender_id: number
+    created_at: string
+  } | null
+  unread_count: number
+  updated_at: string
 }

@@ -16,6 +16,7 @@ from api.views import (
     RecommendedCandidatesView,
     RecommendedJobsView,
     RegisterView,
+    SavedJobViewSet,
     SkillViewSet,
     UserViewSet,
 )
@@ -28,6 +29,7 @@ router.register('jobs', JobViewSet, basename='job')
 router.register('applications', ApplicationViewSet, basename='application')
 router.register('experiences', ExperienceEntryViewSet, basename='experience')
 router.register('education', EducationEntryViewSet, basename='education')
+router.register('saved-jobs', SavedJobViewSet, basename='saved-job')
 
 urlpatterns = [
     # Authentication & profile
@@ -48,6 +50,9 @@ urlpatterns = [
 
     # Social feed
     path('feed/', include('feed.urls')),
+
+    # Connections, messaging & notifications
+    path('', include('social.urls')),
 
     # Reports
     path('reports/', include(report_urls)),

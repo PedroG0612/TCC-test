@@ -163,6 +163,17 @@ Candidates cannot change statuses (`403`).
 
 ---
 
+## Saved jobs (`/saved-jobs/`)
+
+### GET /saved-jobs/
+Auth. → list of jobs saved by the current user (full `Job` payload + `saved_at`).
+
+### POST /saved-jobs/
+Auth. `{job}` → `{saved: bool, job}` — toggles the save state.
+Jobs in `GET /jobs/` responses include `is_saved` for the authenticated user.
+
+---
+
 ## Matching
 
 ### GET /matching/jobs/
@@ -202,6 +213,66 @@ Auth (company → own data; admin → platform-wide).
 | `export_format` | `xlsx` (default), `pdf` |
 
 Returns a file download (`application/vnd...spreadsheetml` or `application/pdf`).
+
+---
+
+## Social — feed, connections, messaging, notifications
+
+Base prefix `/api/`. All endpoints require `Authorization: Token <token>` unless noted.
+
+### Feed — `/feed/posts/`
+
+| Method & path | Description |
+|---------------|-------------|
+| `GET /feed/posts/?ordering=&page=` | Paginated posts. `ordering`: `-created_at` (default), `-like_count,-created_at`, `created_at`, `like_count`. Optional `?author=<username>`. |
+| `POST /feed/posts/` | Create a post — `multipart/form-data` or JSON: `text` (required unless `image`), `image` (optional). |
+| `DELETE /feed/posts/{id}/` | Delete own post (staff may delete any). |
+| `POST /feed/posts/{id}/like/` | Toggle like → `{liked, like_count}`. |
+| `GET /feed/posts/{id}/comments/` | List comments. |
+| `POST /feed/posts/{id}/comments/` | Add comment `{text}`. |
+
+Post objects include `author` (compact public card), `text`, `image_url`,
+`like_count`, `comment_count`, `has_liked`, `is_own`, timestamps.
+
+### Public profiles — `/public-profiles/{username}/`
+
+Public read-only profile (candidate or company). Returns `username`, `name`,
+`role`, `city`, `profile` (safe public subset) and `jobs` (company only).
+
+### Connections — `/connections/` (candidates only)
+
+| Method & path | Description |
+|---------------|-------------|
+| `GET /connections/` | `{accepted, incoming, outgoing}` lists. |
+| `POST /connections/` | Send request `{username}` or `{user_id}`. Duplicates rejected; rejected pairs may re-request. |
+| `GET /connections/status/?username=` | `{state, connection_id}` — `none`/`incoming`/`outgoing`/`connected`. |
+| `POST /connections/{id}/accept/` | Addressee accepts → both connected. |
+| `POST /connections/{id}/reject/` | Addressee rejects. |
+| `POST /connections/{id}/cancel/` | Requester cancels a pending request. |
+| `GET /connections/suggestions/` | Up to 12 candidates without a pending/accepted link. |
+
+### Conversations & messages — `/conversations/` (connected candidates only)
+
+| Method & path | Description |
+|---------------|-------------|
+| `GET /conversations/` | List with `other_user`, `last_message`, `unread_count`. |
+| `POST /conversations/` | Start/resume `{username}` — requires accepted connection. |
+| `GET /conversations/{id}/messages/` | Latest 100 messages. |
+| `POST /conversations/{id}/messages/` | Send `{text}` (max 2000 chars). |
+| `POST /conversations/{id}/read/` | Mark incoming messages as read. |
+
+### Notifications — `/notifications/`
+
+| Method & path | Description |
+|---------------|-------------|
+| `GET /notifications/?page=&page_size=&unread=1` | `{count, unread_count, results}`. |
+| `POST /notifications/{id}/read/` | Mark one as read. |
+| `POST /notifications/read-all/` | Mark all as read. |
+
+Notification `type`s: `post_created`, `connection_request`,
+`connection_accepted`, `message_received`, `application_received`,
+`application_status`. Each includes `text`, optional `link`, `actor`,
+`is_read`, `created_at`.
 
 ---
 

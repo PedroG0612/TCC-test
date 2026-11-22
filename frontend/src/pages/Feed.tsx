@@ -387,7 +387,7 @@ export function Feed() {
                 <>
                   <Link to="/jobs" className="block font-medium text-slate-600 hover:text-brand-600">Buscar vagas</Link>
                   <Link to="/applications" className="block font-medium text-slate-600 hover:text-brand-600">Minhas candidaturas</Link>
-                  <Link to="/matching" className="block font-medium text-slate-600 hover:text-brand-600">Vagas para meu perfil</Link>
+                  <Link to="/jobs" className="block font-medium text-slate-600 hover:text-brand-600">Vagas para meu perfil</Link>
                 </>
               )}
               {isCompany && (
@@ -510,7 +510,7 @@ export function Feed() {
                 <ul className="space-y-3">
                   {suggestions.map((m: JobMatch) => (
                     <li key={m.job.id}>
-                      <Link to={`/jobs/${m.job.id}`} className="block">
+                      <Link to={`/jobs?job=${m.job.id}`} className="block">
                         <p className="text-sm font-semibold text-slate-900 hover:text-brand-700">{m.job.title}</p>
                         <p className="text-xs text-slate-500">{m.job.company_name} · {m.job.location}</p>
                         <span className="badge mt-1 bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-200">{m.score}% match</span>
@@ -519,7 +519,7 @@ export function Feed() {
                   ))}
                 </ul>
               )}
-              <Link to="/matching" className="mt-3 inline-block text-xs font-semibold text-brand-600 hover:underline">Ver todas →</Link>
+              <Link to="/jobs" className="mt-3 inline-block text-xs font-semibold text-brand-600 hover:underline">Ver todas →</Link>
             </div>
           )}
 

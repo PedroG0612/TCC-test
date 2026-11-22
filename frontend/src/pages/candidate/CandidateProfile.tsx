@@ -342,7 +342,7 @@ export function CandidateProfile() {
                     >
                       Adicionar seção
                     </button>
-                    <Link to="/matching" className="btn-outline !py-2 text-xs">Melhorar perfil</Link>
+                    <Link to="/jobs" className="btn-outline !py-2 text-xs">Melhorar perfil</Link>
                     <Link to={`/u/${user.username}`} className="btn-ghost !py-2 text-xs">Perfil público ↗</Link>
                   </div>
                 </>
@@ -733,14 +733,14 @@ export function CandidateProfile() {
             <div className="space-y-1 text-sm">
               <Link to="/jobs" className="block font-medium text-slate-600 hover:text-brand-600">Buscar vagas</Link>
               <Link to="/applications" className="block font-medium text-slate-600 hover:text-brand-600">Minhas candidaturas</Link>
-              <Link to="/matching" className="block font-medium text-slate-600 hover:text-brand-600">Vagas para meu perfil</Link>
+              <Link to="/jobs" className="block font-medium text-slate-600 hover:text-brand-600">Vagas para meu perfil</Link>
             </div>
           </div>
         </aside>
       </div>
 
       <p className="mt-6 text-center text-xs text-slate-400">
-        <Link to="/matching" className="font-semibold text-brand-600 hover:underline">Ver vagas para meu perfil →</Link>
+        <Link to="/jobs" className="font-semibold text-brand-600 hover:underline">Ver vagas para meu perfil →</Link>
       </p>
     </div>
   )

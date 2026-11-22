@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'matching',
     'reports',
     'feed',
+    'social',
     'api',
 ]
 

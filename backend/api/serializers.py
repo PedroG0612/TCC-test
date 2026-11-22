@@ -10,7 +10,7 @@ from accounts.models import (
     ExperienceEntry,
     Skill,
 )
-from jobs.models import Application, ApplicationStatusHistory, Job
+from jobs.models import Application, ApplicationStatusHistory, Job, SavedJob
 
 User = get_user_model()
 
@@ -360,6 +360,7 @@ class JobSerializer(serializers.ModelSerializer):
     )
     application_count = serializers.IntegerField(read_only=True, required=False)
     has_applied = serializers.SerializerMethodField()
+    is_saved = serializers.SerializerMethodField()
 
     class Meta:
         model = Job
@@ -370,7 +371,7 @@ class JobSerializer(serializers.ModelSerializer):
             'essential_skills', 'desired_skills', 'skills',
             'essential_skill_ids', 'desired_skill_ids',
             'status', 'company', 'company_name', 'company_logo',
-            'application_count', 'has_applied', 'created_at', 'updated_at',
+            'application_count', 'has_applied', 'is_saved', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
@@ -385,6 +386,12 @@ class JobSerializer(serializers.ModelSerializer):
         if not request or not request.user.is_authenticated or not request.user.is_candidate:
             return False
         return obj.applications.filter(candidate__user=request.user).exists()
+
+    def get_is_saved(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.saves.filter(user=request.user).exists()
 
     def validate(self, attrs):
         salary_min = attrs.get('salary_min')

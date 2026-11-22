@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import api from '../lib/api'
 import { useAuth } from '../context/AuthContext'
-import type { PublicProfile } from '../types'
+import type { ConnectionState, PublicProfile } from '../types'
 import { EmptyState, Spinner } from '../components/ui'
 import { CompanyLogo } from '../components/CompanyLogo'
 import {
@@ -12,9 +12,13 @@ import {
 export function PublicProfile() {
   const { username } = useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [data, setData] = useState<PublicProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [connState, setConnState] = useState<ConnectionState>('none')
+  const [connId, setConnId] = useState<number | null>(null)
+  const [connBusy, setConnBusy] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -23,6 +27,43 @@ export function PublicProfile() {
       .catch(() => setError('Perfil não encontrado.'))
       .finally(() => setLoading(false))
   }, [username])
+
+  const isCandidateViewer = user?.role === 'candidate'
+  const showConnect =
+    isCandidateViewer && data?.role === 'candidate' && user?.username !== data?.username
+
+  const refreshConn = () => {
+    if (!showConnect) return
+    api.get<{ state: ConnectionState; connection_id: number | null }>(
+      '/connections/status/', { params: { username } }
+    ).then(({ data }) => {
+      setConnState(data.state)
+      setConnId(data.connection_id)
+    }).catch(() => {})
+  }
+
+  useEffect(refreshConn, [username, data?.role, user?.username]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sendRequest = async () => {
+    setConnBusy(true)
+    try {
+      await api.post('/connections/', { username })
+      refreshConn()
+    } catch { /* ignore */ }
+    setConnBusy(false)
+  }
+
+  const respond = async (action: 'accept' | 'reject' | 'cancel') => {
+    if (!connId) return
+    setConnBusy(true)
+    try {
+      await api.post(`/connections/${connId}/${action}/`)
+      refreshConn()
+    } catch { /* ignore */ }
+    setConnBusy(false)
+  }
+
+  const openChat = () => navigate(`/messages?with=${username}`)
 
   if (loading) return <Spinner />
   if (error || !data) {
@@ -60,7 +101,7 @@ export function PublicProfile() {
         </div>
         <div className="px-5 pb-6 sm:px-8">
           <div className="-mt-14 flex items-end justify-between gap-4 sm:-mt-16">
-            <div>
+            <div className="relative z-10">
               {avatar ? (
                 <img
                   src={avatar}
@@ -73,11 +114,42 @@ export function PublicProfile() {
                 </div>
               )}
             </div>
-            {isOwn && (
-              <Link to={isCandidate ? '/profile' : '/company/profile'} className="btn-outline !py-2 text-xs">
-                Editar perfil
-              </Link>
-            )}
+            <div className="flex items-center gap-2">
+              {isOwn && (
+                <Link to={isCandidate ? '/profile' : '/company/profile'} className="btn-outline !py-2 text-xs">
+                  Editar perfil
+                </Link>
+              )}
+              {showConnect && (
+                <>
+                  {connState === 'none' && (
+                    <button onClick={sendRequest} disabled={connBusy} className="btn-primary !py-2 text-xs">
+                      {connBusy ? '…' : 'Conectar'}
+                    </button>
+                  )}
+                  {connState === 'outgoing' && (
+                    <button onClick={() => respond('cancel')} disabled={connBusy} className="btn-outline !py-2 text-xs">
+                      Pendente · cancelar
+                    </button>
+                  )}
+                  {connState === 'incoming' && (
+                    <>
+                      <button onClick={() => respond('accept')} disabled={connBusy} className="btn-primary !py-2 text-xs">
+                        Aceitar
+                      </button>
+                      <button onClick={() => respond('reject')} disabled={connBusy} className="btn-outline !py-2 text-xs">
+                        Recusar
+                      </button>
+                    </>
+                  )}
+                  {connState === 'connected' && (
+                    <button onClick={openChat} className="btn-primary !py-2 text-xs">
+                      Mensagem
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           <h1 className="mt-3 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{name}</h1>
           <p className="mt-0.5 text-base text-slate-600">{headline || (isCandidate ? 'Profissional' : 'Empresa')}</p>

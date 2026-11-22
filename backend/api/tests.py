@@ -449,3 +449,52 @@ class ReportsTests(TestCase):
         client = self.auth(self.candidate)
         resp = client.get('/api/reports/export/?dataset=applications')
         self.assertEqual(resp.status_code, 403)
+
+
+class SavedJobTests(TestCase):
+    def setUp(self):
+        self.candidate = make_user(User.Role.CANDIDATE, 'saver')
+        self.other = make_user(User.Role.CANDIDATE, 'other')
+        company_user = make_user(User.Role.COMPANY, 'jobco')
+        self.job = Job.objects.create(
+            company=company_user.company_profile, title='Dev',
+            description='desc', location='SP',
+            status=Job.Status.PUBLISHED,
+        )
+        self.client = APIClient()
+        resp = self.client.post('/api/auth/login/', {
+            'username': 'saver', 'password': 'testpass123',
+        })
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
+
+    def test_save_and_unsave_toggle(self):
+        resp = self.client.post('/api/saved-jobs/', {'job': self.job.id}, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.data['saved'])
+
+        resp = self.client.post('/api/saved-jobs/', {'job': self.job.id}, format='json')
+        self.assertFalse(resp.data['saved'])
+
+        resp = self.client.get('/api/saved-jobs/')
+        self.assertEqual(resp.data, [])
+
+    def test_list_saved_jobs(self):
+        self.client.post('/api/saved-jobs/', {'job': self.job.id}, format='json')
+        resp = self.client.get('/api/saved-jobs/')
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]['title'], 'Dev')
+        self.assertTrue(resp.data[0]['is_saved'])
+
+    def test_is_saved_flag_on_job_list(self):
+        self.client.post('/api/saved-jobs/', {'job': self.job.id}, format='json')
+        resp = self.client.get('/api/jobs/')
+        self.assertTrue(resp.data['results'][0]['is_saved'])
+
+    def test_saved_jobs_are_private(self):
+        self.client.post('/api/saved-jobs/', {'job': self.job.id}, format='json')
+        other = APIClient()
+        resp = other.post('/api/auth/login/', {
+            'username': 'other', 'password': 'testpass123',
+        })
+        other.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
+        self.assertEqual(other.get('/api/saved-jobs/').data, [])

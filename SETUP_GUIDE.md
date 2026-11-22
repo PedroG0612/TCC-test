@@ -59,6 +59,19 @@ Demo account passwords are read from `DEMO_CANDIDATE_PASSWORD`,
 `DEMO_COMPANY_PASSWORD`, `DEMO_ADMIN_PASSWORD`; if unset, the command
 prompts interactively (hidden input). Never hardcode passwords in source.
 
+For richer demonstration data (extra candidates, companies, jobs, posts,
+connections and messages):
+
+```bash
+python manage.py seed_demo_data   # idempotent — safe to re-run
+```
+
+All `demo.*` accounts share the `DEMO_SEED_PASSWORD` environment variable;
+if unset, a documented development-only password is used. Seeded users:
+`demo.dev`, `demo.data`, `demo.design`, `demo.sec`, `demo.mkt` (candidates)
+and `demo.fin`, `demo.health`, `demo.edu`, `demo.shop` (companies), plus the
+base `demo.candidate`, `demo.company`, `demo.admin`.
+
 ## 3. Frontend setup
 
 ```bash

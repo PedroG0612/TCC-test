@@ -15,7 +15,6 @@ import { ResetPassword } from './pages/ResetPassword'
 import { CandidateDashboard } from './pages/candidate/CandidateDashboard'
 import { CandidateProfile } from './pages/candidate/CandidateProfile'
 import { MyApplications } from './pages/candidate/MyApplications'
-import { Matching } from './pages/candidate/Matching'
 import { CompanyDashboard } from './pages/company/CompanyDashboard'
 import { CompanyProfile } from './pages/company/CompanyProfile'
 import { CompanyJobs } from './pages/company/CompanyJobs'
@@ -31,6 +30,8 @@ import { AdminReports } from './pages/admin/AdminReports'
 import { AdminProfile } from './pages/admin/AdminProfile'
 import { Feed } from './pages/Feed'
 import { PublicProfile } from './pages/PublicProfile'
+import { Messages } from './pages/Messages'
+import { Connections } from './pages/Connections'
 
 export default function App() {
   return (
@@ -62,7 +63,8 @@ export default function App() {
                 <Route path="/dashboard" element={<CandidateDashboard />} />
                 <Route path="/profile" element={<CandidateProfile />} />
                 <Route path="/applications" element={<MyApplications />} />
-                <Route path="/matching" element={<Matching />} />
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/connections" element={<Connections />} />
               </Route>
 
               {/* Company */}
