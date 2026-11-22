@@ -19,7 +19,13 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from accounts.models import CandidateProfile, CompanyProfile, Skill
+from accounts.models import (
+    CandidateProfile,
+    CompanyProfile,
+    EducationEntry,
+    ExperienceEntry,
+    Skill,
+)
 from jobs.models import Application, Job
 
 User = get_user_model()
@@ -40,7 +46,22 @@ DEMO_DATA = {
             'education': 'Tecnólogo em Sistemas de Informação — Universidade X',
             'experience_years': 1,
             'skills': ['Python', 'JavaScript', 'React', 'HTML', 'CSS', 'Git', 'Figma', 'SQL'],
+            'preferred_category': 'technology',
+            'preferred_work_modes': ['hybrid', 'remote'],
+            'preferred_location': 'São Paulo',
             'city': 'São Paulo',
+            'experiences': [{
+                'role': 'Estagiária de Desenvolvimento',
+                'company': 'Agência Web XYZ',
+                'start': '2024-02', 'end': '', 'is_current': False,
+                'description': 'Implementação de landing pages e correção de bugs '
+                               'em React.',
+            }],
+            'educations': [{
+                'course': 'Sistemas de Informação',
+                'institution': 'Universidade X',
+                'status': 'in_progress', 'year': 2026,
+            }],
         },
     },
     'company': {
@@ -52,6 +73,12 @@ DEMO_DATA = {
         'password_env': 'DEMO_COMPANY_PASSWORD',
         'profile': {
             'company_name': 'TechNova Soluções',
+            'legal_name': 'TechNova Soluções Ltda.',
+            'trade_name': 'TechNova',
+            'cnpj': '12.345.678/0001-90',
+            'sector': 'Tecnologia',
+            'size': '11-50',
+            'state': 'SP',
             'description': 'Startup de tecnologia focada em produtos digitais '
                            'para pequenas e médias empresas.',
             'website': 'https://technova.demo',
@@ -83,9 +110,14 @@ DEMO_JOBS = [
         'location': 'São Paulo',
         'work_mode': Job.WorkMode.HYBRID,
         'job_type': Job.JobType.FULL_TIME,
+        'seniority': Job.Seniority.JUNIOR,
+        'contract_type': 'CLT',
+        'responsibilities': 'Desenvolver interfaces web com React e TypeScript; '
+                            'participar de code reviews; colaborar com design.',
         'salary_min': '3500.00',
         'salary_max': '5000.00',
-        'skills': ['JavaScript', 'React', 'HTML', 'CSS', 'Git', 'Figma', 'TypeScript'],
+        'essential_skills': ['JavaScript', 'React', 'HTML', 'CSS'],
+        'desired_skills': ['Git', 'Figma', 'TypeScript'],
         'status': Job.Status.PUBLISHED,
     },
     {
@@ -98,9 +130,14 @@ DEMO_JOBS = [
         'location': 'Remoto',
         'work_mode': Job.WorkMode.REMOTE,
         'job_type': Job.JobType.INTERNSHIP,
+        'seniority': Job.Seniority.JUNIOR,
+        'contract_type': 'Estágio',
+        'responsibilities': 'Apoiar análises e dashboards comerciais; limpar e '
+                            'organizar bases de dados; documentar aprendizados.',
         'salary_min': '1500.00',
         'salary_max': '2200.00',
-        'skills': ['Python', 'SQL', 'Excel'],
+        'essential_skills': ['Python', 'SQL'],
+        'desired_skills': ['Excel'],
         'status': Job.Status.PUBLISHED,
     },
     {
@@ -113,9 +150,14 @@ DEMO_JOBS = [
         'location': 'São Paulo',
         'work_mode': Job.WorkMode.HYBRID,
         'job_type': Job.JobType.FULL_TIME,
+        'seniority': Job.Seniority.PLENO,
+        'contract_type': 'CLT',
+        'responsibilities': 'Liderar projetos de UX/UI em aplicativos; manter '
+                            'design system; conduzir pesquisas com usuários.',
         'salary_min': '6000.00',
         'salary_max': '9000.00',
-        'skills': ['Figma', 'UI Design', 'UX Research', 'Design Systems'],
+        'essential_skills': ['Figma', 'UI Design', 'UX Research'],
+        'desired_skills': ['Design Systems'],
         'status': Job.Status.PUBLISHED,
     },
 ]
@@ -175,9 +217,28 @@ class Command(BaseCommand):
         profile.bio = p['bio']
         profile.education = p['education']
         profile.experience_years = p['experience_years']
+        profile.preferred_category = p.get('preferred_category', '')
+        profile.preferred_work_modes = p.get('preferred_work_modes', [])
+        profile.preferred_location = p.get('preferred_location', '')
         profile.save()
         profile.user.city = p['city']
         profile.user.save(update_fields=['city'])
+        for exp in p.get('experiences', []):
+            ExperienceEntry.objects.update_or_create(
+                profile=profile, role=exp['role'], company=exp['company'],
+                defaults={
+                    'start': exp.get('start', ''), 'end': exp.get('end', ''),
+                    'is_current': exp.get('is_current', False),
+                    'description': exp.get('description', ''),
+                },
+            )
+        for edu in p.get('educations', []):
+            EducationEntry.objects.update_or_create(
+                profile=profile, course=edu['course'],
+                institution=edu['institution'],
+                defaults={'status': edu.get('status', 'completed'),
+                          'year': edu.get('year')},
+            )
         users['candidate'], profiles['candidate'] = user, profile
         self.stdout.write(f'Candidate: {user.username} ({"created" if created else "updated"})')
 
@@ -202,6 +263,12 @@ class Command(BaseCommand):
             profile = CompanyProfile(user=user)
         p = data['profile']
         profile.company_name = p['company_name']
+        profile.legal_name = p.get('legal_name', '')
+        profile.trade_name = p.get('trade_name', '')
+        profile.cnpj = p.get('cnpj', '')
+        profile.sector = p.get('sector', '')
+        profile.size = p.get('size', '')
+        profile.state = p.get('state', '')
         profile.description = p['description']
         profile.website = p['website']
         profile.save()
@@ -230,8 +297,10 @@ class Command(BaseCommand):
         self.stdout.write(f'Admin:     {user.username} ({"created" if created else "updated"})')
 
         # --- Skills --------------------------------------------------------
-        skill_names = sorted({s for job in DEMO_JOBS for s in job['skills']} |
-                             set(DEMO_DATA['candidate']['profile']['skills']))
+        skill_names = sorted(
+            {s for job in DEMO_JOBS for s in job['essential_skills'] + job['desired_skills']}
+            | set(DEMO_DATA['candidate']['profile']['skills'])
+        )
         skill_map = {}
         for name in skill_names:
             skill, _ = Skill.objects.get_or_create(name=name)
@@ -243,9 +312,17 @@ class Command(BaseCommand):
             job, job_created = Job.objects.update_or_create(
                 title=job_data['title'],
                 company=profiles['company'],
-                defaults={k: v for k, v in job_data.items() if k != 'skills'},
+                defaults={
+                    k: v for k, v in job_data.items()
+                    if k not in ('essential_skills', 'desired_skills')
+                },
             )
-            job.skills.set([skill_map[s] for s in job_data['skills']])
+            job.essential_skills.set(
+                [skill_map[s] for s in job_data['essential_skills']]
+            )
+            job.desired_skills.set(
+                [skill_map[s] for s in job_data['desired_skills']]
+            )
             self.stdout.write(f'Job:      {job.title} ({"created" if job_created else "updated"})')
 
         # --- One demo application ------------------------------------------

@@ -3,14 +3,20 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
-from accounts.models import CandidateProfile, CompanyProfile, Skill
-from jobs.models import Application, Job
+from accounts.models import (
+    CandidateProfile,
+    CompanyProfile,
+    EducationEntry,
+    ExperienceEntry,
+    Skill,
+)
+from jobs.models import Application, ApplicationStatusHistory, Job
 
 User = get_user_model()
 
 
 # ---------------------------------------------------------------------------
-# Auth / profiles
+# Skills & profile entries
 # ---------------------------------------------------------------------------
 class SkillSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,12 +24,31 @@ class SkillSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
+class ExperienceEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExperienceEntry
+        fields = ['id', 'role', 'company', 'start', 'end', 'is_current', 'description']
+        read_only_fields = ['id']
+
+
+class EducationEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EducationEntry
+        fields = ['id', 'course', 'institution', 'status', 'year']
+        read_only_fields = ['id']
+
+
+# ---------------------------------------------------------------------------
+# Profiles
+# ---------------------------------------------------------------------------
 class CandidateProfileSerializer(serializers.ModelSerializer):
     skills = SkillSerializer(many=True, read_only=True)
     skill_ids = serializers.PrimaryKeyRelatedField(
         queryset=Skill.objects.all(), many=True, write_only=True,
         source='skills', required=False,
     )
+    experiences = ExperienceEntrySerializer(many=True, read_only=True)
+    educations = EducationEntrySerializer(many=True, read_only=True)
     resume_url = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
 
@@ -31,8 +56,9 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
         model = CandidateProfile
         fields = [
             'id', 'headline', 'bio', 'education', 'experience_years',
-            'skills', 'skill_ids', 'resume', 'resume_url', 'photo',
-            'photo_url',
+            'skills', 'skill_ids', 'preferred_category', 'preferred_work_modes',
+            'preferred_location', 'experiences', 'educations',
+            'resume', 'resume_url', 'photo', 'photo_url',
         ]
         extra_kwargs = {
             'resume': {'write_only': True, 'required': False},
@@ -52,7 +78,8 @@ class CompanyProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyProfile
         fields = [
-            'id', 'company_name', 'description', 'website', 'logo', 'logo_url',
+            'id', 'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector',
+            'size', 'state', 'description', 'website', 'logo', 'logo_url',
         ]
         extra_kwargs = {'logo': {'write_only': True, 'required': False}}
 
@@ -74,6 +101,9 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'date_joined']
 
 
+# ---------------------------------------------------------------------------
+# Registration
+# ---------------------------------------------------------------------------
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
@@ -84,17 +114,38 @@ class RegisterSerializer(serializers.ModelSerializer):
     bio = serializers.CharField(required=False, allow_blank=True)
     education = serializers.CharField(required=False, allow_blank=True, max_length=150)
     experience_years = serializers.IntegerField(required=False, min_value=0, default=0)
+    preferred_category = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    preferred_work_modes = serializers.ListField(
+        child=serializers.CharField(), required=False
+    )
+    preferred_location = serializers.CharField(required=False, allow_blank=True, max_length=120)
 
     # Company profile fields
     company_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    legal_name = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    trade_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    cnpj = serializers.CharField(required=False, allow_blank=True, max_length=20)
+    sector = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    size = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    state = serializers.CharField(required=False, allow_blank=True, max_length=50)
 
     class Meta:
         model = User
         fields = [
             'username', 'email', 'password', 'password_confirm', 'role',
             'first_name', 'last_name', 'phone', 'city',
-            'headline', 'bio', 'education', 'experience_years', 'company_name',
+            'headline', 'bio', 'education', 'experience_years',
+            'preferred_category', 'preferred_work_modes', 'preferred_location',
+            'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
+            'state',
         ]
+
+    PROFILE_FIELDS = {
+        'headline', 'bio', 'education', 'experience_years',
+        'preferred_category', 'preferred_work_modes', 'preferred_location',
+        'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
+        'state',
+    }
 
     def validate_role(self, value):
         # Public registration must never create administrators.
@@ -114,7 +165,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         profile_data = {
             key: validated_data.pop(key)
-            for key in ('headline', 'bio', 'education', 'experience_years', 'company_name')
+            for key in self.PROFILE_FIELDS
             if key in validated_data
         }
         role = validated_data['role']
@@ -127,11 +178,20 @@ class RegisterSerializer(serializers.ModelSerializer):
                 bio=profile_data.get('bio', ''),
                 education=profile_data.get('education', ''),
                 experience_years=profile_data.get('experience_years', 0),
+                preferred_category=profile_data.get('preferred_category', ''),
+                preferred_work_modes=profile_data.get('preferred_work_modes', []),
+                preferred_location=profile_data.get('preferred_location', ''),
             )
         elif role == User.Role.COMPANY:
             CompanyProfile.objects.create(
                 user=user,
                 company_name=profile_data.get('company_name') or user.username,
+                legal_name=profile_data.get('legal_name', ''),
+                trade_name=profile_data.get('trade_name', ''),
+                cnpj=profile_data.get('cnpj', ''),
+                sector=profile_data.get('sector', ''),
+                size=profile_data.get('size', ''),
+                state=profile_data.get('state', ''),
             )
         return user
 
@@ -154,11 +214,22 @@ class ProfileUpdateSerializer(serializers.Serializer):
     skills = serializers.ListField(
         child=serializers.IntegerField(), required=False, write_only=True
     )
+    preferred_category = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    preferred_work_modes = serializers.ListField(
+        child=serializers.CharField(), required=False
+    )
+    preferred_location = serializers.CharField(required=False, allow_blank=True, max_length=120)
     resume = serializers.FileField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
 
     # Company profile fields
     company_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    legal_name = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    trade_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    cnpj = serializers.CharField(required=False, allow_blank=True, max_length=20)
+    sector = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    size = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    state = serializers.CharField(required=False, allow_blank=True, max_length=50)
     description = serializers.CharField(required=False, allow_blank=True)
     website = serializers.URLField(required=False, allow_blank=True)
     logo = serializers.ImageField(required=False, allow_null=True)
@@ -166,16 +237,18 @@ class ProfileUpdateSerializer(serializers.Serializer):
     USER_FIELDS = {'email', 'first_name', 'last_name', 'phone', 'city'}
     CANDIDATE_FIELDS = {
         'headline', 'bio', 'education', 'experience_years', 'skills',
+        'preferred_category', 'preferred_work_modes', 'preferred_location',
         'resume', 'photo',
     }
-    COMPANY_FIELDS = {'company_name', 'description', 'website', 'logo'}
+    COMPANY_FIELDS = {
+        'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
+        'state', 'description', 'website', 'logo',
+    }
 
     def update(self, instance, validated_data):
-        user_fields = {
-            k: v for k, v in validated_data.items() if k in self.USER_FIELDS
-        }
-        for key, value in user_fields.items():
-            setattr(instance, key, value)
+        for key, value in validated_data.items():
+            if key in self.USER_FIELDS:
+                setattr(instance, key, value)
         instance.save()
 
         if instance.is_candidate:
@@ -203,10 +276,17 @@ class JobSerializer(serializers.ModelSerializer):
     )
     company_name = serializers.CharField(source='company.company_name', read_only=True)
     company_logo = serializers.SerializerMethodField()
-    skills = SkillSerializer(many=True, read_only=True)
-    skill_ids = serializers.PrimaryKeyRelatedField(
+
+    essential_skills = SkillSerializer(many=True, read_only=True)
+    desired_skills = SkillSerializer(many=True, read_only=True)
+    skills = serializers.SerializerMethodField()
+    essential_skill_ids = serializers.PrimaryKeyRelatedField(
         queryset=Skill.objects.all(), many=True, write_only=True,
-        source='skills', required=False,
+        source='essential_skills', required=False,
+    )
+    desired_skill_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Skill.objects.all(), many=True, write_only=True,
+        source='desired_skills', required=False,
     )
     application_count = serializers.IntegerField(read_only=True, required=False)
     has_applied = serializers.SerializerMethodField()
@@ -214,16 +294,21 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = [
-            'id', 'title', 'slug', 'description', 'requirements', 'category',
-            'location', 'work_mode', 'job_type', 'salary_min', 'salary_max',
-            'currency', 'skills', 'skill_ids', 'status', 'company',
-            'company_name', 'company_logo', 'application_count', 'has_applied',
-            'created_at', 'updated_at',
+            'id', 'title', 'slug', 'description', 'requirements', 'responsibilities',
+            'category', 'location', 'work_mode', 'job_type', 'seniority',
+            'contract_type', 'salary_min', 'salary_max', 'currency',
+            'essential_skills', 'desired_skills', 'skills',
+            'essential_skill_ids', 'desired_skill_ids',
+            'status', 'company', 'company_name', 'company_logo',
+            'application_count', 'has_applied', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
 
     def get_company_logo(self, obj):
         return obj.company.logo.url if obj.company.logo else None
+
+    def get_skills(self, obj):
+        return SkillSerializer(obj.all_skills, many=True).data
 
     def get_has_applied(self, obj):
         request = self.context.get('request')
@@ -241,18 +326,34 @@ class JobSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class ApplicationStatusHistorySerializer(serializers.ModelSerializer):
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ApplicationStatusHistory
+        fields = ['id', 'from_status', 'to_status', 'status_display', 'created_at']
+
+    def get_status_display(self, obj):
+        try:
+            return Application.Status(obj.to_status).label
+        except ValueError:
+            return obj.to_status
+
+
 class ApplicationSerializer(serializers.ModelSerializer):
     candidate_name = serializers.SerializerMethodField()
     candidate_email = serializers.SerializerMethodField()
     job_title = serializers.CharField(source='job.title', read_only=True)
     company_name = serializers.CharField(source='job.company.company_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    status_history = ApplicationStatusHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Application
         fields = [
-            'id', 'job', 'candidate', 'cover_letter', 'status',
+            'id', 'job', 'candidate', 'cover_letter', 'status', 'status_display',
             'candidate_name', 'candidate_email', 'job_title', 'company_name',
-            'created_at', 'updated_at',
+            'status_history', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'candidate', 'created_at', 'updated_at']
 
@@ -286,16 +387,18 @@ class ApplicationStatusUpdateSerializer(serializers.Serializer):
 # ---------------------------------------------------------------------------
 # Matching
 # ---------------------------------------------------------------------------
-class JobMatchSerializer(serializers.Serializer):
+class MatchBreakdownSerializer(serializers.Serializer):
+    score = serializers.FloatField()
+    matched_skills = serializers.ListField(child=serializers.CharField())
+    criteria = serializers.DictField()
+
+
+class JobMatchSerializer(MatchBreakdownSerializer):
     job = JobSerializer()
-    score = serializers.FloatField()
-    matched_skills = serializers.ListField(child=serializers.CharField())
 
 
-class CandidateMatchSerializer(serializers.Serializer):
+class CandidateMatchSerializer(MatchBreakdownSerializer):
     candidate = serializers.SerializerMethodField()
-    score = serializers.FloatField()
-    matched_skills = serializers.ListField(child=serializers.CharField())
 
     def get_candidate(self, obj):
         profile = obj['candidate']
@@ -306,5 +409,11 @@ class CandidateMatchSerializer(serializers.Serializer):
             'bio': profile.bio,
             'education': profile.education,
             'experience_years': profile.experience_years,
+            'preferred_category': profile.preferred_category,
+            'preferred_work_modes': profile.preferred_work_modes,
+            'preferred_location': profile.preferred_location,
+            'city': profile.user.city,
             'skills': SkillSerializer(profile.skills.all(), many=True).data,
+            'experiences': ExperienceEntrySerializer(profile.experiences.all(), many=True).data,
+            'educations': EducationEntrySerializer(profile.educations.all(), many=True).data,
         }

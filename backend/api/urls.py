@@ -3,11 +3,15 @@ from rest_framework.routers import DefaultRouter
 
 from api.views import (
     ApplicationViewSet,
+    EducationEntryViewSet,
+    ExperienceEntryViewSet,
     JobViewSet,
     LoginView,
     LogoutView,
     MeView,
     PasswordChangeView,
+    PasswordResetConfirmView,
+    PasswordResetRequestView,
     RecommendedCandidatesView,
     RecommendedJobsView,
     RegisterView,
@@ -21,6 +25,8 @@ router.register('users', UserViewSet, basename='user')
 router.register('skills', SkillViewSet, basename='skill')
 router.register('jobs', JobViewSet, basename='job')
 router.register('applications', ApplicationViewSet, basename='application')
+router.register('experiences', ExperienceEntryViewSet, basename='experience')
+router.register('education', EducationEntryViewSet, basename='education')
 
 urlpatterns = [
     # Authentication & profile
@@ -29,6 +35,8 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view(), name='auth-logout'),
     path('auth/me/', MeView.as_view(), name='auth-me'),
     path('auth/password/change/', PasswordChangeView.as_view(), name='auth-password-change'),
+    path('auth/password/reset/', PasswordResetRequestView.as_view(), name='auth-password-reset'),
+    path('auth/password/reset/confirm/', PasswordResetConfirmView.as_view(), name='auth-password-reset-confirm'),
 
     # Matching recommendations
     path('matching/jobs/', RecommendedJobsView.as_view(), name='matching-jobs'),

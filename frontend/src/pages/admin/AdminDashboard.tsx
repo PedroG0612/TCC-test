@@ -14,7 +14,7 @@ export function AdminDashboard() {
   }, [])
 
   if (loading) return <Spinner />
-  if (!stats) return <p className="p-10 text-center text-sm text-slate-500">Could not load statistics.</p>
+  if (!stats) return <p className="p-10 text-center text-sm text-slate-500">Não foi possível carregar as estatísticas.</p>
 
   const t = stats.totals
   const maxMonthly = Math.max(...stats.monthly_applications.map((m) => m.count), 1)
@@ -22,22 +22,22 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Admin dashboard</h1>
-      <p className="mt-1 text-sm text-slate-500">Platform-wide statistics and reports.</p>
+      <h1 className="text-2xl font-bold text-slate-900">Painel do administrador</h1>
+      <p className="mt-1 text-sm text-slate-500">Estatísticas e relatórios de toda a plataforma.</p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Users" value={t.users} />
-        <StatCard label="Candidates" value={t.candidates} />
-        <StatCard label="Companies" value={t.companies} />
-        <StatCard label="Jobs" value={t.jobs} />
-        <StatCard label="Applications" value={t.applications} accent="violet" />
-        <StatCard label="Last 30 days" value={t.applications_last_30_days} />
+        <StatCard label="Usuários" value={t.users} />
+        <StatCard label="Candidatos" value={t.candidates} />
+        <StatCard label="Empresas" value={t.companies} />
+        <StatCard label="Vagas" value={t.jobs} />
+        <StatCard label="Candidaturas" value={t.applications} accent="violet" />
+        <StatCard label="Últimos 30 dias" value={t.applications_last_30_days} />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         {/* Monthly applications */}
         <div className="card p-6">
-          <h2 className="mb-4 font-semibold text-slate-900">Applications per month</h2>
+          <h2 className="mb-4 font-semibold text-slate-900">Candidaturas por mês</h2>
           <div className="flex h-40 items-end gap-2">
             {stats.monthly_applications.map((m) => (
               <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
@@ -54,9 +54,9 @@ export function AdminDashboard() {
 
         {/* Applications by category */}
         <div className="card p-6">
-          <h2 className="mb-4 font-semibold text-slate-900">Most requested areas</h2>
+          <h2 className="mb-4 font-semibold text-slate-900">Áreas mais solicitadas</h2>
           {stats.applications_by_category.length === 0 ? (
-            <p className="text-sm text-slate-400">No data yet.</p>
+            <p className="text-sm text-slate-400">Sem dados ainda.</p>
           ) : (
             <div className="space-y-3">
               {stats.applications_by_category.map((c) => (
@@ -76,9 +76,9 @@ export function AdminDashboard() {
 
         {/* Applications per job */}
         <div className="card p-6">
-          <h2 className="mb-4 font-semibold text-slate-900">Applications per vacancy</h2>
+          <h2 className="mb-4 font-semibold text-slate-900">Candidaturas por vaga</h2>
           {stats.applications_per_job.length === 0 ? (
-            <p className="text-sm text-slate-400">No applications yet.</p>
+            <p className="text-sm text-slate-400">Nenhuma candidatura ainda.</p>
           ) : (
             <div className="divide-y divide-slate-100">
               {stats.applications_per_job.map((row, i) => (
@@ -96,9 +96,9 @@ export function AdminDashboard() {
 
         {/* Top skills */}
         <div className="card p-6">
-          <h2 className="mb-4 font-semibold text-slate-900">Most demanded skills</h2>
+          <h2 className="mb-4 font-semibold text-slate-900">Habilidades mais exigidas</h2>
           {stats.top_skills.length === 0 ? (
-            <p className="text-sm text-slate-400">No data yet.</p>
+            <p className="text-sm text-slate-400">Sem dados ainda.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {stats.top_skills.map((s) => (
@@ -108,7 +108,7 @@ export function AdminDashboard() {
               ))}
             </div>
           )}
-          <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700">Top locations</h3>
+          <h3 className="mb-2 mt-6 text-sm font-semibold text-slate-700">Principais localidades</h3>
           <div className="flex flex-wrap gap-2">
             {stats.top_locations.map((l) => (
               <span key={l.location} className="badge bg-slate-100 px-3 py-1.5 text-sm text-slate-600">

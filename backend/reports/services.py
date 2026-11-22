@@ -45,15 +45,28 @@ def platform_overview():
         for code, count in _top_counter(applications, 'job__category', limit=8)
     ]
 
-    # Most demanded skills: count of published jobs requiring each skill.
-    skill_counts = (
+    # Most demanded skills: count of published jobs requiring each skill
+    # (essential + desired criteria both count as demand).
+    essential_counts = dict(
         Skill.objects.annotate(
-            total=Count('jobs', filter=Q(jobs__status=Job.Status.PUBLISHED))
-        )
-        .order_by('-total')
-        .values_list('name', 'total')[:10]
+            total=Count('essential_jobs', filter=Q(essential_jobs__status=Job.Status.PUBLISHED))
+        ).values_list('id', 'total')
     )
-    top_skills = [{'skill': name, 'count': total} for name, total in skill_counts]
+    desired_counts = dict(
+        Skill.objects.annotate(
+            total=Count('desired_jobs', filter=Q(desired_jobs__status=Job.Status.PUBLISHED))
+        ).values_list('id', 'total')
+    )
+    demand = Counter()
+    for skill_id, total in essential_counts.items():
+        demand[skill_id] += total
+    for skill_id, total in desired_counts.items():
+        demand[skill_id] += total
+    skill_names = dict(Skill.objects.values_list('id', 'name'))
+    top_skills = [
+        {'skill': skill_names[sid], 'count': total}
+        for sid, total in demand.most_common(10)
+    ]
 
     top_locations = [
         {'location': loc, 'count': count}

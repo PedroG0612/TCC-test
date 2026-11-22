@@ -2,7 +2,7 @@
 
 Appliety is a smart job marketplace and recruitment platform. It centralizes
 companies, candidates, job vacancies and applications, using simple matching
-algorithms (scikit-learn TF-IDF + cosine similarity) to recommend suitable
+algorithms (explainable weighted criteria + scikit-learn TF-IDF) to recommend suitable
 opportunities and candidates.
 
 ## Stack
@@ -12,7 +12,7 @@ opportunities and candidates.
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS                          |
 | Backend  | Python, Django 5, Django REST Framework                           |
 | Database | PostgreSQL (Supabase in production) / SQLite for local dev        |
-| Matching | scikit-learn (TF-IDF vectorizer + cosine similarity)              |
+| Matching | scikit-learn (TF-IDF + cosine similarity) inside explainable weighted criteria |
 | Reports  | openpyxl (Excel) and reportlab (PDF)                              |
 | Docs     | drf-spectacular (OpenAPI / Swagger UI)                            |
 

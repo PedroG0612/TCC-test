@@ -78,6 +78,33 @@ class AuthTests(TestCase):
         })
         self.assertEqual(resp.status_code, 401)
 
+    def test_login_with_email(self):
+        resp = self.client.post('/api/auth/login/', {
+            'email': 'cand@test.com', 'password': 'testpass123',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('token', resp.data)
+
+    def test_password_reset_request_and_confirm(self):
+        resp = self.client.post('/api/auth/password/reset/', {'email': 'cand@test.com'})
+        self.assertEqual(resp.status_code, 200)
+        # Unknown e-mails get the same response (no enumeration).
+        resp = self.client.post('/api/auth/password/reset/', {'email': 'nobody@x.com'})
+        self.assertEqual(resp.status_code, 200)
+
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+
+        uid = urlsafe_base64_encode(force_bytes(self.candidate.pk))
+        token = default_token_generator.make_token(self.candidate)
+        resp = self.client.post('/api/auth/password/reset/confirm/', {
+            'uid': uid, 'token': token, 'new_password': 'newpass999',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.candidate.refresh_from_db()
+        self.assertTrue(self.candidate.check_password('newpass999'))
+
     def test_logout(self):
         resp = self.client.post('/api/auth/login/', {
             'username': 'cand', 'password': 'testpass123',
@@ -210,15 +237,18 @@ class ApplicationTests(TestCase):
     def test_company_updates_status_with_history(self):
         app = Application.objects.create(job=self.job, candidate=self.candidate_profile)
         self.auth(self.company_user)
-        resp = self.client.patch(f'/api/applications/{app.id}/', {'status': 'shortlisted'})
+        resp = self.client.patch(f'/api/applications/{app.id}/', {'status': 'under_review'})
         self.assertEqual(resp.status_code, 200)
         app.refresh_from_db()
-        self.assertEqual(app.status, 'shortlisted')
+        self.assertEqual(app.status, 'under_review')
         self.assertTrue(
             ApplicationStatusHistory.objects.filter(
-                application=app, to_status='shortlisted', changed_by=self.company_user
+                application=app, to_status='under_review', changed_by=self.company_user
             ).exists()
         )
+        # Status history is exposed for the candidate timeline.
+        detail = self.client.get(f'/api/applications/{app.id}/')
+        self.assertIn('status_history', detail.data)
 
     def test_candidate_cannot_change_status(self):
         app = Application.objects.create(job=self.job, candidate=self.candidate_profile)
@@ -267,13 +297,16 @@ class MatchingTests(TestCase):
             requirements='Python, Django, PostgreSQL', location='SP',
             status=Job.Status.PUBLISHED,
         )
-        self.job.skills.set([python, django])
+        self.job.essential_skills.set([python, django])
+        self.job.desired_skills.set([Skill.objects.create(name='PostgreSQL')])
 
     def test_score_pair_high_for_relevant(self):
         from matching.engine import score_pair
 
         score = score_pair(self.candidate.candidate_profile, self.job)
-        self.assertGreater(score, 30)
+        self.assertGreater(score['score'], 50)
+        self.assertIn('essential', score['criteria'])
+        self.assertIn('Python', score['matched_skills'])
 
     def test_recommend_jobs_endpoint(self):
         client = APIClient()
@@ -295,6 +328,70 @@ class MatchingTests(TestCase):
         client.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
         resp = client.get(f'/api/matching/candidates/?job={self.job.id}')
         self.assertEqual(resp.status_code, 403)
+
+    def test_recommend_candidates_filters(self):
+        client = APIClient()
+        resp = client.post('/api/auth/login/', {
+            'username': 'co', 'password': 'testpass123',
+        })
+        client.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
+        # min_score above the actual score returns nobody
+        resp = client.get(f'/api/matching/candidates/?job={self.job.id}&min_score=99')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 0)
+        # text search excludes non-matching candidates
+        resp = client.get(f'/api/matching/candidates/?job={self.job.id}&q=zzzznomatch')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 0)
+        resp = client.get(f'/api/matching/candidates/?job={self.job.id}&q=python')
+        self.assertEqual(len(resp.data), 1)
+
+
+class CandidateEntryTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.candidate = make_user(User.Role.CANDIDATE, 'cand')
+        self.company_user = make_user(User.Role.COMPANY, 'co')
+        resp = self.client.post('/api/auth/login/', {
+            'username': 'cand', 'password': 'testpass123',
+        })
+        self.client.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
+
+    def test_experience_crud(self):
+        resp = self.client.post('/api/experiences/', {
+            'role': 'Dev Jr', 'company': 'Startup X', 'start': '2024-01',
+            'is_current': True, 'description': 'Built React pages',
+        })
+        self.assertEqual(resp.status_code, 201)
+        exp_id = resp.data['id']
+        resp = self.client.patch(f'/api/experiences/{exp_id}/', {'role': 'Dev Pleno'})
+        self.assertEqual(resp.status_code, 200)
+        resp = self.client.get('/api/experiences/')
+        self.assertEqual(resp.data['count'], 1)
+        self.assertEqual(resp.data['results'][0]['role'], 'Dev Pleno')
+
+    def test_education_crud(self):
+        resp = self.client.post('/api/education/', {
+            'course': 'Análise de Sistemas', 'institution': 'Faculdade Y',
+            'status': 'in_progress', 'year': 2027,
+        })
+        self.assertEqual(resp.status_code, 201)
+        resp = self.client.get('/api/education/')
+        self.assertEqual(resp.data['results'][0]['course'], 'Análise de Sistemas')
+
+    def test_company_cannot_access_entries(self):
+        client = APIClient()
+        resp = client.post('/api/auth/login/', {
+            'username': 'co', 'password': 'testpass123',
+        })
+        client.credentials(HTTP_AUTHORIZATION=f"Token {resp.data['token']}")
+        self.assertEqual(client.get('/api/experiences/').status_code, 403)
+
+    def test_entries_isolated_per_candidate(self):
+        other = make_user(User.Role.CANDIDATE, 'cand2')
+        other.candidate_profile.experiences.create(role='Other', company='Z')
+        resp = self.client.get('/api/experiences/')
+        self.assertEqual(resp.data['count'], 0)
 
 
 class ReportsTests(TestCase):

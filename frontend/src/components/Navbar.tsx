@@ -14,15 +14,30 @@ export function Navbar() {
   const [open, setOpen] = useState(false)
 
   const navItems = user
-    ? [
-        { to: ROLE_HOME[user.role] ?? '/dashboard', label: 'Dashboard' },
-        ...(user.role === 'candidate' ? [{ to: '/jobs', label: 'Find jobs' }] : []),
-        ...(user.role === 'company' ? [{ to: '/company/jobs', label: 'My vacancies' }] : []),
-        ...(user.role === 'admin' ? [{ to: '/admin/users', label: 'Users' }] : []),
-      ]
+    ? user.role === 'candidate'
+      ? [
+          { to: '/dashboard', label: 'Painel' },
+          { to: '/jobs', label: 'Vagas' },
+          { to: '/applications', label: 'Minhas candidaturas' },
+          { to: '/matching', label: 'Vagas para mim' },
+        ]
+      : user.role === 'company'
+        ? [
+            { to: '/company/dashboard', label: 'Painel' },
+            { to: '/company/jobs', label: 'Vagas' },
+            { to: '/company/applications', label: 'Candidaturas' },
+            { to: '/company/matching', label: 'Matching' },
+          ]
+        : [
+            { to: '/admin/dashboard', label: 'Painel' },
+            { to: '/admin/users', label: 'Usuários' },
+            { to: '/admin/jobs', label: 'Vagas' },
+            { to: '/admin/applications', label: 'Candidaturas' },
+            { to: '/admin/reports', label: 'Relatórios' },
+          ]
     : [
-        { to: '/jobs', label: 'Find jobs' },
-        { to: '/about', label: 'About' },
+        { to: '/jobs', label: 'Vagas' },
+        { to: '/about', label: 'Sobre' },
       ]
 
   const handleLogout = async () => {
@@ -30,6 +45,14 @@ export function Navbar() {
     navigate('/')
     setOpen(false)
   }
+
+  const profileTo = user
+    ? user.role === 'candidate'
+      ? '/profile'
+      : user.role === 'company'
+        ? '/company/profile'
+        : '/admin/profile'
+    : '/login'
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
@@ -43,7 +66,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -59,26 +82,26 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {user ? (
             <>
-              <Link to={user.role === 'candidate' ? '/profile' : user.role === 'company' ? '/company/profile' : '/admin/profile'} className="btn-ghost">
+              <Link to={profileTo} className="btn-ghost">
                 {user.first_name || user.username}
               </Link>
               <button onClick={handleLogout} className="btn-outline">
-                Log out
+                Sair
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="btn-ghost">Log in</Link>
-              <Link to="/register" className="btn-primary">Sign up</Link>
+              <Link to="/login" className="btn-ghost">Entrar</Link>
+              <Link to="/register" className="btn-primary">Cadastrar</Link>
             </>
           )}
         </div>
 
         <button
-          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
           onClick={() => setOpen(!open)}
           aria-label="Menu"
         >
@@ -89,7 +112,7 @@ export function Navbar() {
       </div>
 
       {open && (
-        <div className="border-t border-slate-200 bg-white px-4 py-3 md:hidden">
+        <div className="border-t border-slate-200 bg-white px-4 py-3 lg:hidden">
           <nav className="flex flex-col gap-1">
             {navItems.map((item) => (
               <NavLink
@@ -103,12 +126,12 @@ export function Navbar() {
             ))}
             {user ? (
               <button onClick={handleLogout} className="rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50">
-                Log out
+                Sair
               </button>
             ) : (
               <>
-                <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Log in</Link>
-                <Link to="/register" onClick={() => setOpen(false)} className="rounded-lg bg-brand-600 px-3 py-2 text-center text-sm font-semibold text-white">Sign up</Link>
+                <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Entrar</Link>
+                <Link to="/register" onClick={() => setOpen(false)} className="rounded-lg bg-brand-600 px-3 py-2 text-center text-sm font-semibold text-white">Cadastrar</Link>
               </>
             )}
           </nav>

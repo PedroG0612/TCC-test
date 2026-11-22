@@ -11,7 +11,7 @@ class Job(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'draft', 'Draft'
         PUBLISHED = 'published', 'Published'
-        CLOSED = 'closed', 'Closed'
+        PAUSED = 'paused', 'Paused'
 
     class WorkMode(models.TextChoices):
         REMOTE = 'remote', 'Remote'
@@ -23,6 +23,11 @@ class Job(models.Model):
         PART_TIME = 'part_time', 'Part-time'
         INTERNSHIP = 'internship', 'Internship'
         FREELANCE = 'freelance', 'Freelance'
+
+    class Seniority(models.TextChoices):
+        JUNIOR = 'junior', 'Junior'
+        PLENO = 'pleno', 'Pleno'
+        SENIOR = 'senior', 'Senior'
 
     class Category(models.TextChoices):
         TECHNOLOGY = 'technology', 'Technology'
@@ -41,6 +46,7 @@ class Job(models.Model):
     slug = models.SlugField(max_length=220, blank=True)
     description = models.TextField()
     requirements = models.TextField(blank=True)
+    responsibilities = models.TextField(blank=True)
     category = models.CharField(
         max_length=30, choices=Category.choices, default=Category.OTHER, db_index=True
     )
@@ -51,6 +57,10 @@ class Job(models.Model):
     job_type = models.CharField(
         max_length=20, choices=JobType.choices, default=JobType.FULL_TIME
     )
+    seniority = models.CharField(
+        max_length=20, choices=Seniority.choices, default=Seniority.PLENO
+    )
+    contract_type = models.CharField(max_length=60, blank=True)
     salary_min = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True
     )
@@ -58,7 +68,15 @@ class Job(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     currency = models.CharField(max_length=3, default='BRL')
-    skills = models.ManyToManyField(Skill, blank=True, related_name='jobs')
+
+    # Matching criteria (Figma 03.2): essential vs desired competencies.
+    essential_skills = models.ManyToManyField(
+        Skill, blank=True, related_name='essential_jobs'
+    )
+    desired_skills = models.ManyToManyField(
+        Skill, blank=True, related_name='desired_jobs'
+    )
+
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.DRAFT, db_index=True
     )
@@ -77,6 +95,13 @@ class Job(models.Model):
     def __str__(self):
         return f'{self.title} @ {self.company.company_name}'
 
+    @property
+    def all_skills(self):
+        """Union of essential and desired skills (for display/search)."""
+        return Skill.objects.filter(
+            models.Q(essential_jobs=self) | models.Q(desired_jobs=self)
+        ).distinct()
+
     def save(self, *args, **kwargs):
         if not self.slug:
             base = slugify(f'{self.title}-{self.company.company_name}')[:200]
@@ -89,13 +114,14 @@ class Job(models.Model):
 
     def profile_text(self):
         """Free-text representation used by the matching engine."""
-        skills = ', '.join(self.skills.values_list('name', flat=True))
+        skills = ', '.join(self.all_skills.values_list('name', flat=True))
         return ' '.join(
             part
             for part in [
                 self.title,
                 self.description,
                 self.requirements,
+                self.responsibilities,
                 self.category,
                 self.location,
                 self.work_mode.replace('_', ' '),
@@ -109,11 +135,11 @@ class Application(models.Model):
     """A candidate's application to a job vacancy."""
 
     class Status(models.TextChoices):
-        APPLIED = 'applied', 'Applied'
-        UNDER_REVIEW = 'under_review', 'Under review'
-        SHORTLISTED = 'shortlisted', 'Shortlisted'
-        REJECTED = 'rejected', 'Rejected'
-        HIRED = 'hired', 'Hired'
+        APPLIED = 'applied', 'Enviada'
+        UNDER_REVIEW = 'under_review', 'Em análise'
+        INTERVIEW = 'interview', 'Entrevista'
+        REJECTED = 'rejected', 'Não avançou'
+        HIRED = 'hired', 'Contratado'
 
     job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='applications')
     candidate = models.ForeignKey(
@@ -141,7 +167,7 @@ class Application(models.Model):
 
 
 class ApplicationStatusHistory(models.Model):
-    """Audit trail of application status changes."""
+    """Audit trail of application status changes (drives the candidate timeline)."""
 
     application = models.ForeignKey(
         Application, on_delete=models.CASCADE, related_name='status_history'
@@ -158,7 +184,7 @@ class ApplicationStatusHistory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['created_at']
         verbose_name = 'application status history'
         verbose_name_plural = 'application status histories'
 

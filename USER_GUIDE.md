@@ -14,7 +14,7 @@
 5. **Apply** with an optional cover letter. You can't apply twice to the same
    vacancy.
 6. **Track applications** (`/applications`) — filter by status
-   (applied → under review → shortlisted → rejected/hired).
+   (enviada → em análise → entrevista → não avançou/contratada).
 7. **Get matches** (`/matching` or the candidate dashboard): vacancies ranked
    by compatibility with explanations (shared skills).
 

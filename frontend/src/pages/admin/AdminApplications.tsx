@@ -5,7 +5,7 @@ import type { Application, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
 
-const STATUSES = ['applied', 'under_review', 'shortlisted', 'rejected', 'hired']
+const STATUSES = ['applied', 'under_review', 'interview', 'rejected', 'hired']
 
 export function AdminApplications() {
   const [params] = useSearchParams()
@@ -34,14 +34,14 @@ export function AdminApplications() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Application oversight</h1>
-      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} applications` : ''}</p>
+      <h1 className="text-2xl font-bold text-slate-900">Acompanhamento de candidaturas</h1>
+      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} candidaturas` : ''}</p>
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button onClick={() => setStatus('')} className={`badge px-3 py-1.5 text-sm ring-1 ring-inset ${!status ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}>All</button>
         {STATUSES.map((s) => (
           <button key={s} onClick={() => setStatus(s)} className={`badge px-3 py-1.5 text-sm ring-1 ring-inset capitalize ${status === s ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}>
-            {s.replace('_', ' ')}
+            {s === 'applied' ? 'Enviada' : s === 'under_review' ? 'Em análise' : s === 'interview' ? 'Entrevista' : s === 'rejected' ? 'Não avançou' : 'Contratado'}
           </button>
         ))}
       </div>
@@ -49,16 +49,16 @@ export function AdminApplications() {
       {loading ? (
         <Spinner />
       ) : !data || data.results.length === 0 ? (
-        <EmptyState title="No applications" />
+        <EmptyState title="Nenhuma candidatura" />
       ) : (
         <div className="card mt-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-                <th className="px-4 py-3">Candidate</th>
-                <th className="px-4 py-3">Vacancy</th>
-                <th className="px-4 py-3">Company</th>
-                <th className="px-4 py-3">Applied</th>
+                <th className="px-4 py-3">Candidato</th>
+                <th className="px-4 py-3">Vaga</th>
+                <th className="px-4 py-3">Empresa</th>
+                <th className="px-4 py-3">Enviada em</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
             </thead>
@@ -78,7 +78,7 @@ export function AdminApplications() {
                       value={app.status}
                       onChange={(e) => changeStatus(app, e.target.value)}
                     >
-                      {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                      {STATUSES.map((s) => <option key={s} value={s}>{s === 'applied' ? 'Enviada' : s === 'under_review' ? 'Em análise' : s === 'interview' ? 'Entrevista' : s === 'rejected' ? 'Não avançou' : 'Contratado'}</option>)}
                     </select>
                   </td>
                 </tr>

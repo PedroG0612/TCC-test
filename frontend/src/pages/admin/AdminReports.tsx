@@ -4,9 +4,9 @@ import { useAuth } from '../../context/AuthContext'
 import { ErrorAlert } from '../../components/ui'
 
 const DATASETS = [
-  { value: 'applications', label: 'Applications' },
-  { value: 'jobs', label: 'Vacancies' },
-  { value: 'overview', label: 'Platform overview' },
+  { value: 'applications', label: 'Candidaturas' },
+  { value: 'jobs', label: 'Vagas' },
+  { value: 'overview', label: 'Visão geral' },
 ]
 const FORMATS = [
   { value: 'xlsx', label: 'Excel (.xlsx)' },
@@ -40,7 +40,7 @@ export function AdminReports() {
       a.click()
       URL.revokeObjectURL(url)
     } catch {
-      setError('Could not generate the report.')
+      setError('Não foi possível gerar o relatório.')
     } finally {
       setLoading(false)
     }
@@ -48,15 +48,15 @@ export function AdminReports() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Reports & exports</h1>
+      <h1 className="text-2xl font-bold text-slate-900">Relatórios e exportações</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Generate reports from real platform data. Admins can export platform-wide data;
+        Gere relatórios com dados reais da plataforma. Admins can export platform-wide data;
         companies export their own vacancies and applications.
       </p>
 
       <div className="card mt-6 space-y-5 p-6">
         <div>
-          <label className="label">Dataset</label>
+          <label className="label">Conjunto de dados</label>
           <div className="grid gap-2 sm:grid-cols-3">
             {datasets.map((d) => (
               <button
@@ -73,7 +73,7 @@ export function AdminReports() {
           </div>
         </div>
         <div>
-          <label className="label">Format</label>
+          <label className="label">Formato</label>
           <div className="flex gap-2">
             {FORMATS.map((f) => (
               <button
@@ -89,7 +89,7 @@ export function AdminReports() {
         </div>
         {error && <ErrorAlert message={error} />}
         <button onClick={download} disabled={loading} className="btn-primary">
-          {loading ? 'Generating…' : '⬇ Download report'}
+          {loading ? 'Gerando…' : '⬇ Baixar relatório'}
         </button>
       </div>
     </div>

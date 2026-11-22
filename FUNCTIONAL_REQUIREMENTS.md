@@ -30,7 +30,7 @@ Checklist against the official SENAI assignment. ✅ = implemented & tested.
 - [x] Candidates: browse, search & filter vacancies, view details, apply
       (with optional cover letter), view & track history
 - [x] Companies: view received applications, candidate info (name/email),
-      manage statuses (`applied → under_review → shortlisted → rejected/hired`)
+      manage statuses (`applied → under_review → interview → rejected/hired`)
       with audit history, access application history
 - [x] `django-filter` on jobs (q, category, work_mode, job_type, location,
       salary_min, dates) and applications (status, job, candidate, dates)

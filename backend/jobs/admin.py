@@ -14,7 +14,7 @@ class JobAdmin(admin.ModelAdmin):
     list_display = ('title', 'company', 'category', 'location', 'status', 'created_at')
     list_filter = ('status', 'category', 'work_mode', 'job_type')
     search_fields = ('title', 'company__company_name', 'location')
-    filter_horizontal = ('skills',)
+    filter_horizontal = ('essential_skills', 'desired_skills')
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ('created_at', 'updated_at')
 

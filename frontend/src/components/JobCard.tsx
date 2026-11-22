@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Job } from '../types'
+import { CATEGORY_LABELS, JOB_TYPE_LABELS, WORK_MODE_LABELS, label } from '../lib/labels'
 import { StatusBadge } from './StatusBadge'
 
 export function formatSalary(job: Job): string | null {
@@ -7,12 +8,7 @@ export function formatSalary(job: Job): string | null {
   const fmt = (v: string) =>
     Number(v).toLocaleString('pt-BR', { style: 'currency', currency: job.currency || 'BRL', maximumFractionDigits: 0 })
   if (job.salary_min && job.salary_max) return `${fmt(job.salary_min)} – ${fmt(job.salary_max)}`
-  return job.salary_min ? `From ${fmt(job.salary_min)}` : `Up to ${fmt(job.salary_max!)}`
-}
-
-const WORK_MODE: Record<string, string> = { remote: 'Remote', hybrid: 'Hybrid', onsite: 'On-site' }
-const JOB_TYPE: Record<string, string> = {
-  full_time: 'Full-time', part_time: 'Part-time', internship: 'Internship', freelance: 'Freelance',
+  return job.salary_min ? `A partir de ${fmt(job.salary_min)}` : `Até ${fmt(job.salary_max!)}`
 }
 
 export function JobCard({ job, showStatus = false }: { job: Job; showStatus?: boolean }) {
@@ -37,8 +33,11 @@ export function JobCard({ job, showStatus = false }: { job: Job; showStatus?: bo
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
         <span>📍 {job.location}</span>
-        <span>{WORK_MODE[job.work_mode] ?? job.work_mode}</span>
-        <span>{JOB_TYPE[job.job_type] ?? job.job_type}</span>
+        <span>{label(WORK_MODE_LABELS, job.work_mode)}</span>
+        <span>{label(JOB_TYPE_LABELS, job.job_type)}</span>
+        <span className="badge bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200">
+          {label(CATEGORY_LABELS, job.category)}
+        </span>
         {salary && <span className="font-medium text-brand-700">{salary}</span>}
       </div>
 

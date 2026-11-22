@@ -26,7 +26,7 @@ export function AdminUsers() {
       await api.patch(`/users/${u.id}/`, { is_active: !u.is_active })
       fetchUsers()
     } catch {
-      setError('Could not update user.')
+      setError('Não foi possível atualizar o usuário.')
     }
   }
 
@@ -36,26 +36,26 @@ export function AdminUsers() {
       await api.patch(`/users/${u.id}/`, { role: newRole })
       fetchUsers()
     } catch {
-      setError('Could not change role.')
+      setError('Não foi possível alterar o papel.')
     }
   }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">User management</h1>
-      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} registered users` : ''}</p>
+      <h1 className="text-2xl font-bold text-slate-900">Gestão de usuários</h1>
+      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} usuários cadastrados` : ''}</p>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <input
           className="input !w-64"
-          placeholder="Search name, username, email…"
+          placeholder="Buscar nome, usuário, e-mail…"
           defaultValue={search}
           onKeyDown={(e) => e.key === 'Enter' && setSearch((e.target as HTMLInputElement).value)}
           onBlur={(e) => setSearch(e.target.value)}
         />
         <select className="input !w-44" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">All roles</option>
-          {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+          <option value="">Todos os perfis</option>
+          {ROLES.map((r) => <option key={r} value={r}>{r === 'candidate' ? 'Candidato' : r === 'company' ? 'Empresa' : 'Admin'}</option>)}
         </select>
       </div>
 
@@ -64,17 +64,17 @@ export function AdminUsers() {
       {loading ? (
         <Spinner />
       ) : !data || data.results.length === 0 ? (
-        <p className="card mt-6 p-10 text-center text-sm text-slate-500">No users found.</p>
+        <p className="card mt-6 p-10 text-center text-sm text-slate-500">Nenhum usuário encontrado.</p>
       ) : (
         <div className="card mt-6 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-400">
-                <th className="px-4 py-3">User</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Usuário</th>
+                <th className="px-4 py-3">E-mail</th>
+                <th className="px-4 py-3">Perfil</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
+                <th className="px-4 py-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -91,17 +91,17 @@ export function AdminUsers() {
                       value={u.role}
                       onChange={(e) => changeRole(u, e.target.value)}
                     >
-                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                      {ROLES.map((r) => <option key={r} value={r}>{r === 'candidate' ? 'Candidato' : r === 'company' ? 'Empresa' : 'Admin'}</option>)}
                     </select>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`badge ${u.is_active !== false ? 'bg-brand-50 text-brand-700' : 'bg-red-50 text-red-600'}`}>
-                      {u.is_active !== false ? 'Active' : 'Disabled'}
+                      {u.is_active !== false ? 'Ativo' : 'Desativado'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button onClick={() => toggleActive(u)} className="text-xs font-medium text-brand-600 hover:underline">
-                      {u.is_active !== false ? 'Disable' : 'Enable'}
+                      {u.is_active !== false ? 'Desativar' : 'Ativar'}
                     </button>
                   </td>
                 </tr>

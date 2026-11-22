@@ -12,6 +12,7 @@ class JobFilter(django_filters.FilterSet):
     location = django_filters.CharFilter(lookup_expr='icontains')
     company = django_filters.NumberFilter(field_name='company__id')
     salary_min = django_filters.NumberFilter(field_name='salary_min', lookup_expr='gte')
+    skill = django_filters.CharFilter(method='search_skill', label='Skill')
     created_after = django_filters.DateFilter(field_name='created_at', lookup_expr='date__gte')
     created_before = django_filters.DateFilter(field_name='created_at', lookup_expr='date__lte')
 
@@ -19,7 +20,8 @@ class JobFilter(django_filters.FilterSet):
         model = Job
         fields = [
             'q', 'category', 'work_mode', 'job_type', 'status',
-            'location', 'company', 'salary_min', 'created_after', 'created_before',
+            'location', 'company', 'salary_min', 'skill',
+            'created_after', 'created_before',
         ]
 
     @staticmethod
@@ -32,7 +34,17 @@ class JobFilter(django_filters.FilterSet):
             | Q(requirements__icontains=value)
             | Q(location__icontains=value)
             | Q(company__company_name__icontains=value)
-            | Q(skills__name__icontains=value)
+            | Q(essential_skills__name__icontains=value)
+            | Q(desired_skills__name__icontains=value)
+        ).distinct()
+
+    @staticmethod
+    def search_skill(queryset, name, value):
+        from django.db.models import Q
+
+        return queryset.filter(
+            Q(essential_skills__name__icontains=value)
+            | Q(desired_skills__name__icontains=value)
         ).distinct()
 
 

@@ -29,7 +29,7 @@ PostgreSQL instance.
 |------------|-----------------------------------------------------------------------|
 | `accounts` | `User` (role: candidate/company/admin), `CandidateProfile`, `CompanyProfile`, `Skill` |
 | `jobs`     | `Job` (vacancy), `Application`, `ApplicationStatusHistory`, `JobFilter`, `ApplicationFilter` |
-| `matching` | `engine.py` — scikit-learn TF-IDF + cosine similarity scoring          |
+| `matching` | `engine.py` — explainable weighted criteria (50/10/25/15) + scikit-learn TF-IDF |
 | `reports`  | `services.py` aggregations, `exports.py` Excel/PDF generation          |
 | `api`      | DRF serializers, viewsets, auth views, permissions, tests              |
 | `config`   | settings (env-driven), urls, spectacular schema                       |

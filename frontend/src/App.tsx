@@ -9,6 +9,8 @@ import { Jobs } from './pages/Jobs'
 import { JobDetail } from './pages/JobDetail'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
+import { ForgotPassword } from './pages/ForgotPassword'
+import { ResetPassword } from './pages/ResetPassword'
 import { CandidateDashboard } from './pages/candidate/CandidateDashboard'
 import { CandidateProfile } from './pages/candidate/CandidateProfile'
 import { MyApplications } from './pages/candidate/MyApplications'
@@ -16,6 +18,7 @@ import { Matching } from './pages/candidate/Matching'
 import { CompanyDashboard } from './pages/company/CompanyDashboard'
 import { CompanyProfile } from './pages/company/CompanyProfile'
 import { CompanyJobs } from './pages/company/CompanyJobs'
+import { CompanyApplications } from './pages/company/CompanyApplications'
 import { JobForm } from './pages/company/JobForm'
 import { JobApplications } from './pages/company/JobApplications'
 import { CompanyMatching } from './pages/company/CompanyMatching'
@@ -41,6 +44,8 @@ export default function App() {
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
               {/* Candidate */}
               <Route element={<ProtectedRoute roles={['candidate']} />}>
@@ -55,6 +60,7 @@ export default function App() {
                 <Route path="/company/dashboard" element={<CompanyDashboard />} />
                 <Route path="/company/profile" element={<CompanyProfile />} />
                 <Route path="/company/jobs" element={<CompanyJobs />} />
+                <Route path="/company/applications" element={<CompanyApplications />} />
                 <Route path="/company/jobs/new" element={<JobForm />} />
                 <Route path="/company/jobs/:id/edit" element={<JobForm />} />
                 <Route path="/company/jobs/:id/applications" element={<JobApplications />} />

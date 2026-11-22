@@ -10,12 +10,20 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from accounts.models import CandidateProfile, CompanyProfile, Skill
+from accounts.models import (
+    CandidateProfile,
+    CompanyProfile,
+    EducationEntry,
+    ExperienceEntry,
+    Skill,
+)
 from api.permissions import IsAdminRole, IsCandidate, IsCompany
 from api.serializers import (
     ApplicationSerializer,
     ApplicationStatusUpdateSerializer,
     CandidateMatchSerializer,
+    EducationEntrySerializer,
+    ExperienceEntrySerializer,
     JobMatchSerializer,
     JobSerializer,
     ProfileUpdateSerializer,
@@ -52,9 +60,16 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
+        username = request.data.get('username') or request.data.get('email')
         password = request.data.get('password')
         user = authenticate(request, username=username, password=password)
+        if user is None and '@' in str(username or ''):
+            # Allow login with e-mail: resolve to username first.
+            account = User.objects.filter(email__iexact=username).first()
+            if account:
+                user = authenticate(
+                    request, username=account.username, password=password
+                )
         if user is None:
             return Response(
                 {'detail': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED
@@ -87,6 +102,69 @@ class MeView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserSerializer(request.user).data)
+
+
+class PasswordResetRequestView(APIView):
+    """Request a password-reset link. Always returns the same response to
+    avoid leaking which e-mails are registered."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.tokens import default_token_generator
+        from django.core.mail import send_mail
+        from django.utils.encoding import force_bytes
+        from django.utils.http import urlsafe_base64_encode
+
+        email = (request.data.get('email') or '').strip()
+        user = User.objects.filter(email__iexact=email, is_active=True).first()
+        if user:
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = (
+                f"{request.scheme}://{request.get_host()}/reset-password/"
+                f"?uid={uid}&token={token}"
+            )
+            send_mail(
+                subject='Appliety — Redefinição de senha',
+                message=(
+                    f'Olá, {user.get_full_name() or user.username}!\n\n'
+                    f'Para redefinir sua senha, acesse:\n{reset_url}\n\n'
+                    'Se você não solicitou isso, ignore este e-mail.'
+                ),
+                from_email=None,
+                recipient_list=[user.email],
+                fail_silently=True,
+            )
+        return Response(
+            {'detail': 'If an account exists for this e-mail, a reset link was sent.'}
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        from django.contrib.auth.tokens import default_token_generator
+        from django.utils.encoding import force_str
+        from django.utils.http import urlsafe_base64_decode
+
+        uid = request.data.get('uid')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+        try:
+            user = User.objects.get(pk=force_str(urlsafe_base64_decode(uid)))
+        except (User.DoesNotExist, ValueError, TypeError):
+            user = None
+        if user is None or not default_token_generator.check_token(user, token):
+            return Response({'detail': 'Invalid or expired reset link.'}, status=400)
+        try:
+            validate_password(new_password, user=user)
+        except DjangoValidationError as exc:
+            return Response({'new_password': list(exc.messages)}, status=400)
+        user.set_password(new_password)
+        user.save()
+        return Response({'detail': 'Password updated. You can now log in.'})
 
 
 class PasswordChangeView(APIView):
@@ -166,6 +244,39 @@ class SkillViewSet(viewsets.ModelViewSet):
 
 
 # ---------------------------------------------------------------------------
+# Candidate profile entries (experience & education)
+# ---------------------------------------------------------------------------
+class _CandidateEntryViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsCandidate]
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete', 'head', 'options']
+
+    @property
+    def profile(self):
+        profile = getattr(self.request.user, 'candidate_profile', None)
+        if profile is None:
+            from rest_framework.exceptions import NotFound
+
+            raise NotFound('Candidate profile not found.')
+        return profile
+
+    def get_queryset(self):
+        return self.model.objects.filter(profile=self.profile)
+
+    def perform_create(self, serializer):
+        serializer.save(profile=self.profile)
+
+
+class ExperienceEntryViewSet(_CandidateEntryViewSet):
+    serializer_class = ExperienceEntrySerializer
+    model = ExperienceEntry
+
+
+class EducationEntryViewSet(_CandidateEntryViewSet):
+    serializer_class = EducationEntrySerializer
+    model = EducationEntry
+
+
+# ---------------------------------------------------------------------------
 # Jobs
 # ---------------------------------------------------------------------------
 class JobViewSet(viewsets.ModelViewSet):
@@ -181,7 +292,9 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = Job.objects.select_related('company').prefetch_related('skills')
+        qs = Job.objects.select_related('company').prefetch_related(
+            'essential_skills', 'desired_skills'
+        )
 
         if user.is_authenticated and user.is_admin_role:
             pass  # admins see everything
@@ -260,13 +373,14 @@ class JobViewSet(viewsets.ModelViewSet):
         if profile is None:
             return Response({'detail': 'Candidate profile not found.'}, status=404)
         score = matching_engine.score_pair(profile, job)
-        job_skills = set(job.skills.values_list('name', flat=True))
+        job_skills = set(job.all_skills.values_list('name', flat=True))
         candidate_skills = set(profile.skills.values_list('name', flat=True))
         return Response(
             {
                 'job': job.pk,
-                'score': score,
-                'matched_skills': sorted(candidate_skills & job_skills),
+                'score': score['score'],
+                'matched_skills': score['matched_skills'],
+                'criteria': score['criteria'],
             }
         )
 
@@ -303,7 +417,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         qs = Application.objects.select_related(
             'job__company', 'candidate__user'
-        ).prefetch_related('job__skills', 'candidate__skills')
+        ).prefetch_related('status_history', 'job__essential_skills', 'job__desired_skills', 'candidate__skills')
 
         if user.is_admin_role:
             pass
@@ -398,9 +512,45 @@ class RecommendedCandidatesView(APIView):
             if profile is None or job.company_id != profile.id:
                 return Response({'detail': 'Forbidden.'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Optional filters (Figma 05.1): name/skill search, minimum score and
+        # origin = only candidates who actually applied to this vacancy.
+        queryset = CandidateProfile.objects.select_related('user').prefetch_related(
+            'skills', 'experiences', 'educations'
+        )
+        source = request.query_params.get('source')
+        if source == 'applications':
+            queryset = queryset.filter(applications__job=job).distinct()
+
+        search = (request.query_params.get('q') or '').strip()
+        if search:
+            from django.db.models import Q
+
+            queryset = queryset.filter(
+                Q(user__first_name__icontains=search)
+                | Q(user__last_name__icontains=search)
+                | Q(user__username__icontains=search)
+                | Q(headline__icontains=search)
+                | Q(skills__name__icontains=search)
+                | Q(bio__icontains=search)
+            ).distinct()
+
         try:
             limit = min(int(request.query_params.get('limit', 10)), 50)
         except (TypeError, ValueError):
             limit = 10
-        results = matching_engine.recommend_candidates_for_job(job, limit=limit)
+        try:
+            min_score = float(request.query_params.get('min_score') or 0)
+        except (TypeError, ValueError):
+            min_score = 0
+        # Fetch a wider pool when filtering by score so the cutoff isn't
+        # applied to an already-truncated ranking.
+        pool = 50 if min_score > 0 else limit
+        results = matching_engine.recommend_candidates_for_job(
+            job, queryset=queryset, limit=pool
+        )
+        if min_score > 0:
+            results = [r for r in results if r['score'] >= min_score][:limit]
+        else:
+            results = results[:limit]
+
         return Response(CandidateMatchSerializer(results, many=True).data)

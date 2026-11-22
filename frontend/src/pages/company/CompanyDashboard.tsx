@@ -30,31 +30,31 @@ export function CompanyDashboard() {
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">
-            {user?.company_profile?.company_name ?? 'Company'} dashboard
+            {user?.company_profile?.company_name ?? 'Empresa'} — Painel
           </h1>
-          <p className="mt-1 text-sm text-slate-500">Manage your vacancies and applications.</p>
+          <p className="mt-1 text-sm text-slate-500">Gerencie suas vagas e candidaturas.</p>
         </div>
         <div className="flex gap-2">
-          <Link to="/company/matching" className="btn-accent">✨ Candidate matches</Link>
-          <Link to="/company/jobs/new" className="btn-primary">+ New vacancy</Link>
+          <Link to="/company/matching" className="btn-accent">✨ Matching</Link>
+          <Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Published vacancies" value={stats?.totals.published_jobs ?? 0} />
-        <StatCard label="Total applications" value={stats?.totals.applications ?? 0} accent="violet" />
-        <StatCard label="Shortlisted" value={stats?.applications_by_status?.shortlisted ?? 0} />
+        <StatCard label="Vagas publicadas" value={stats?.totals.published_jobs ?? 0} />
+        <StatCard label="Total de candidaturas" value={stats?.totals.applications ?? 0} accent="violet" />
+        <StatCard label="Em análise" value={stats?.applications_by_status?.under_review ?? 0} />
       </div>
 
       <div className="mt-10 grid gap-8 lg:grid-cols-2">
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Your vacancies</h2>
-            <Link to="/company/jobs" className="text-sm font-semibold text-brand-600 hover:underline">Manage all</Link>
+            <h2 className="text-lg font-bold text-slate-900">Suas vagas</h2>
+            <Link to="/company/jobs" className="text-sm font-semibold text-brand-600 hover:underline">Gerenciar todas</Link>
           </div>
           <div className="space-y-3">
             {jobs.length === 0 ? (
-              <p className="card p-6 text-sm text-slate-500">No vacancies yet — publish your first one!</p>
+              <p className="card p-6 text-sm text-slate-500">Nenhuma vaga ainda — publique a primeira!</p>
             ) : (
               jobs.map((job) => <JobCard key={job.id} job={job} showStatus />)
             )}
@@ -63,10 +63,10 @@ export function CompanyDashboard() {
 
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Recent applications</h2>
+            <h2 className="text-lg font-bold text-slate-900">Candidaturas recentes</h2>
           </div>
           {!stats || stats.recent_applications.length === 0 ? (
-            <p className="card p-6 text-sm text-slate-500">No applications received yet.</p>
+            <p className="card p-6 text-sm text-slate-500">Nenhuma candidatura recebida ainda.</p>
           ) : (
             <div className="card divide-y divide-slate-100">
               {stats.recent_applications.map((app) => (

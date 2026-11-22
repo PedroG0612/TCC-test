@@ -4,6 +4,14 @@ import api from '../../lib/api'
 import type { Job, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
+import { JOB_STATUS_LABELS, WORK_MODE_LABELS, label } from '../../lib/labels'
+
+const FILTERS: { value: string; label: string }[] = [
+  { value: '', label: 'Todas' },
+  { value: 'draft', label: 'Rascunhos' },
+  { value: 'published', label: 'Publicadas' },
+  { value: 'paused', label: 'Pausadas' },
+]
 
 export function CompanyJobs() {
   const navigate = useNavigate()
@@ -22,12 +30,12 @@ export function CompanyJobs() {
   useEffect(fetchJobs, [fetchJobs])
 
   const remove = async (job: Job) => {
-    if (!window.confirm(`Delete "${job.title}"? This cannot be undone.`)) return
+    if (!window.confirm(`Excluir “${job.title}”? Esta ação não pode ser desfeita.`)) return
     try {
       await api.delete(`/jobs/${job.id}/`)
       fetchJobs()
     } catch (err: any) {
-      setError(err.response?.data?.detail ?? 'Could not delete vacancy.')
+      setError(err.response?.data?.detail ?? 'Não foi possível excluir a vaga.')
     }
   }
 
@@ -35,20 +43,20 @@ export function CompanyJobs() {
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">My vacancies</h1>
-          <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} total` : ''}</p>
+          <h1 className="text-2xl font-bold text-slate-900">Minhas vagas</h1>
+          <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} no total` : ''}</p>
         </div>
-        <Link to="/company/jobs/new" className="btn-primary">+ New vacancy</Link>
+        <Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>
       </div>
 
-      <div className="mb-4 flex gap-2">
-        {['', 'draft', 'published', 'closed'].map((s) => (
+      <div className="mb-4 flex flex-wrap gap-2">
+        {FILTERS.map((f) => (
           <button
-            key={s || 'all'}
-            onClick={() => setStatus(s)}
-            className={`badge px-3 py-1.5 text-sm ring-1 ring-inset capitalize ${status === s ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}
+            key={f.value || 'all'}
+            onClick={() => setStatus(f.value)}
+            className={`badge px-3 py-1.5 text-sm ring-1 ring-inset ${status === f.value ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}
           >
-            {s || 'All'}
+            {f.label}
           </button>
         ))}
       </div>
@@ -59,9 +67,9 @@ export function CompanyJobs() {
         <Spinner />
       ) : !data || data.results.length === 0 ? (
         <EmptyState
-          title="No vacancies"
-          hint="Create your first job posting to start receiving applications."
-          action={<Link to="/company/jobs/new" className="btn-primary">Create vacancy</Link>}
+          title="Nenhuma vaga"
+          hint="Crie sua primeira vaga para começar a receber candidaturas."
+          action={<Link to="/company/jobs/new" className="btn-primary">Criar vaga</Link>}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -72,20 +80,23 @@ export function CompanyJobs() {
                   <Link to={`/jobs/${job.id}`} className="font-semibold text-slate-900 hover:text-brand-700">
                     {job.title}
                   </Link>
-                  <p className="text-sm text-slate-500">{job.location} · {job.work_mode} · {job.job_type}</p>
+                  <p className="text-sm text-slate-500">
+                    {job.location} · {label(WORK_MODE_LABELS, job.work_mode)} · {job.job_type === 'internship' ? 'Estágio' : job.job_type}
+                  </p>
                 </div>
                 <StatusBadge status={job.status} />
               </div>
               <p className="text-xs text-slate-400">
-                {job.application_count ?? 0} application{(job.application_count ?? 0) === 1 ? '' : 's'} · posted {new Date(job.created_at).toLocaleDateString()}
+                {job.application_count ?? 0} candidatura(s) · publicada em {new Date(job.created_at).toLocaleDateString('pt-BR')}
               </p>
-              <div className="mt-auto flex gap-2">
-                <Link to={`/company/jobs/${job.id}/edit`} className="btn-outline !px-3 !py-1.5 text-xs">Edit</Link>
+              <div className="mt-auto flex flex-wrap gap-2">
+                <Link to={`/company/jobs/${job.id}/edit`} className="btn-outline !px-3 !py-1.5 text-xs">Editar</Link>
                 <Link to={`/company/jobs/${job.id}/applications`} className="btn-accent !px-3 !py-1.5 text-xs">
-                  Applications ({job.application_count ?? 0})
+                  Candidaturas ({job.application_count ?? 0})
                 </Link>
+                <Link to={`/company/matching?job=${job.id}`} className="btn-ghost !px-3 !py-1.5 text-xs">Matching</Link>
                 <button onClick={() => remove(job)} className="ml-auto text-xs font-medium text-red-500 hover:text-red-700">
-                  Delete
+                  Excluir
                 </button>
               </div>
             </div>
