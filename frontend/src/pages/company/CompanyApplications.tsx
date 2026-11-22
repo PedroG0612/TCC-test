@@ -4,6 +4,7 @@ import api from '../../lib/api'
 import type { Application, Job, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, ErrorAlert, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 import { APPLICATION_STATUS_LABELS, label } from '../../lib/labels'
 
 const STATUSES = ['applied', 'under_review', 'interview', 'rejected', 'hired']
@@ -40,14 +41,11 @@ export function CompanyApplications() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Candidaturas</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {data ? `${data.count} candidatura(s) recebida(s)` : 'Todas as candidaturas das suas vagas.'}
-          </p>
-        </div>
-      </div>
+      <AreaHeader
+        eyebrow="EMPRESA / CANDIDATURAS"
+        title="Candidaturas"
+        subtitle={data ? `${data.count} candidatura(s) recebida(s) em todas as suas vagas.` : 'Todas as candidaturas das suas vagas.'}
+      />
 
       <div className="card mb-4 grid gap-3 p-4 sm:grid-cols-3">
         <select className="input" value={jobId} onChange={(e) => setJobId(e.target.value)}>

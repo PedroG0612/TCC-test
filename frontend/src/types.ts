@@ -37,6 +37,8 @@ export interface CandidateProfile {
   educations: EducationEntry[]
   resume_url: string | null
   photo_url: string | null
+  cover_url: string | null
+  certifications: string
 }
 
 export interface CompanyProfile {
@@ -51,6 +53,7 @@ export interface CompanyProfile {
   description: string
   website: string
   logo_url: string | null
+  cover_url: string | null
 }
 
 export interface User {
@@ -206,6 +209,59 @@ export interface CompanyStats {
     candidate_email: string
     status: string
     status_display: string
+    created_at: string
+  }[]
+}
+
+// ---------------------------------------------------------------------------
+// Social feed & public profiles
+// ---------------------------------------------------------------------------
+export interface PostAuthor {
+  id: number
+  username: string
+  name: string
+  role: Role
+  role_display: string
+  headline: string
+  subtitle: string
+  avatar_url: string | null
+  profile_url: string
+}
+
+export interface Post {
+  id: number
+  author: PostAuthor
+  text: string
+  image_url: string | null
+  like_count: number
+  comment_count: number
+  has_liked: boolean
+  is_own: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PostComment {
+  id: number
+  post: number
+  author: PostAuthor
+  text: string
+  created_at: string
+}
+
+export interface PublicProfile {
+  username: string
+  name: string
+  role: Role
+  city: string
+  profile: Record<string, any>
+  jobs?: {
+    id: number
+    title: string
+    location: string
+    work_mode: string
+    job_type: string
+    category: string
     created_at: string
   }[]
 }

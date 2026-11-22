@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -27,6 +28,9 @@ from api.serializers import (
     JobMatchSerializer,
     JobSerializer,
     ProfileUpdateSerializer,
+    PublicCandidateProfileSerializer,
+    PublicCompanyProfileSerializer,
+    PublicJobSerializer,
     RegisterSerializer,
     SkillSerializer,
     UserSerializer,
@@ -89,6 +93,36 @@ class LogoutView(APIView):
     def post(self, request):
         Token.objects.filter(user=request.user).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PublicProfileView(APIView):
+    """Public, read-only profile for /u/<username> — candidates and companies."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username, is_active=True)
+        data = {
+            'username': user.username,
+            'name': user.get_full_name() or user.username,
+            'role': user.role,
+            'city': user.city,
+        }
+        if user.is_candidate and hasattr(user, 'candidate_profile'):
+            data['profile'] = PublicCandidateProfileSerializer(
+                user.candidate_profile
+            ).data
+        elif user.is_company and hasattr(user, 'company_profile'):
+            data['profile'] = PublicCompanyProfileSerializer(
+                user.company_profile
+            ).data
+            jobs = Job.objects.filter(
+                company=user.company_profile, status=Job.Status.PUBLISHED
+            ).order_by('-created_at')[:12]
+            data['jobs'] = PublicJobSerializer(jobs, many=True).data
+        else:
+            return Response({'detail': 'Profile not available.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(data)
 
 
 class MeView(APIView):
@@ -229,6 +263,7 @@ class SkillViewSet(viewsets.ModelViewSet):
 
     serializer_class = SkillSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
     http_method_names = ['get', 'post', 'head', 'options']
     queryset = Skill.objects.all().order_by('name')
 

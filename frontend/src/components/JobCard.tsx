@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Job } from '../types'
 import { CATEGORY_LABELS, JOB_TYPE_LABELS, WORK_MODE_LABELS, label } from '../lib/labels'
 import { StatusBadge } from './StatusBadge'
+import { CompanyLogo } from './CompanyLogo'
 
 export function formatSalary(job: Job): string | null {
   if (!job.salary_min && !job.salary_max) return null
@@ -20,9 +21,7 @@ export function JobCard({ job, showStatus = false }: { job: Job; showStatus?: bo
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 text-sm font-bold text-white">
-            {job.company_name.slice(0, 2).toUpperCase()}
-          </div>
+          <CompanyLogo name={job.company_name} logo={job.company_logo} />
           <div>
             <h3 className="font-semibold text-slate-900 group-hover:text-brand-700">{job.title}</h3>
             <p className="text-sm text-slate-500">{job.company_name}</p>

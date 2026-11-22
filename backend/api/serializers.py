@@ -51,6 +51,7 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     educations = EducationEntrySerializer(many=True, read_only=True)
     resume_url = serializers.SerializerMethodField()
     photo_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
 
     class Meta:
         model = CandidateProfile
@@ -58,11 +59,13 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
             'id', 'headline', 'bio', 'education', 'experience_years',
             'skills', 'skill_ids', 'preferred_category', 'preferred_work_modes',
             'preferred_location', 'experiences', 'educations',
-            'resume', 'resume_url', 'photo', 'photo_url',
+            'resume', 'resume_url', 'photo', 'photo_url', 'cover', 'cover_url',
+            'certifications',
         ]
         extra_kwargs = {
             'resume': {'write_only': True, 'required': False},
             'photo': {'write_only': True, 'required': False},
+            'cover': {'write_only': True, 'required': False},
         }
 
     def get_resume_url(self, obj):
@@ -71,20 +74,31 @@ class CandidateProfileSerializer(serializers.ModelSerializer):
     def get_photo_url(self, obj):
         return obj.photo.url if obj.photo else None
 
+    def get_cover_url(self, obj):
+        return obj.cover.url if obj.cover else None
+
 
 class CompanyProfileSerializer(serializers.ModelSerializer):
     logo_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
 
     class Meta:
         model = CompanyProfile
         fields = [
             'id', 'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector',
             'size', 'state', 'description', 'website', 'logo', 'logo_url',
+            'cover', 'cover_url',
         ]
-        extra_kwargs = {'logo': {'write_only': True, 'required': False}}
+        extra_kwargs = {
+            'logo': {'write_only': True, 'required': False},
+            'cover': {'write_only': True, 'required': False},
+        }
 
     def get_logo_url(self, obj):
         return obj.logo.url if obj.logo else None
+
+    def get_cover_url(self, obj):
+        return obj.cover.url if obj.cover else None
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -99,6 +113,56 @@ class UserSerializer(serializers.ModelSerializer):
             'candidate_profile', 'company_profile',
         ]
         read_only_fields = ['id', 'date_joined']
+
+
+# ---------------------------------------------------------------------------
+# Public profiles (read-only, safe subset for /u/<username>)
+# ---------------------------------------------------------------------------
+class PublicCandidateProfileSerializer(serializers.ModelSerializer):
+    skills = SkillSerializer(many=True, read_only=True)
+    experiences = ExperienceEntrySerializer(many=True, read_only=True)
+    educations = EducationEntrySerializer(many=True, read_only=True)
+    photo_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CandidateProfile
+        fields = [
+            'headline', 'bio', 'education', 'experience_years', 'skills',
+            'preferred_category', 'preferred_work_modes', 'preferred_location',
+            'certifications', 'experiences', 'educations',
+            'photo_url', 'cover_url',
+        ]
+
+    def get_photo_url(self, obj):
+        return obj.photo.url if obj.photo else None
+
+    def get_cover_url(self, obj):
+        return obj.cover.url if obj.cover else None
+
+
+class PublicCompanyProfileSerializer(serializers.ModelSerializer):
+    logo_url = serializers.SerializerMethodField()
+    cover_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompanyProfile
+        fields = [
+            'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector',
+            'size', 'state', 'description', 'website', 'logo_url', 'cover_url',
+        ]
+
+    def get_logo_url(self, obj):
+        return obj.logo.url if obj.logo else None
+
+    def get_cover_url(self, obj):
+        return obj.cover.url if obj.cover else None
+
+
+class PublicJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Job
+        fields = ['id', 'title', 'location', 'work_mode', 'job_type', 'category', 'created_at']
 
 
 # ---------------------------------------------------------------------------
@@ -128,6 +192,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     sector = serializers.CharField(required=False, allow_blank=True, max_length=100)
     size = serializers.CharField(required=False, allow_blank=True, max_length=50)
     state = serializers.CharField(required=False, allow_blank=True, max_length=50)
+    description = serializers.CharField(required=False, allow_blank=True)
+    website = serializers.URLField(required=False, allow_blank=True)
 
     class Meta:
         model = User
@@ -137,14 +203,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             'headline', 'bio', 'education', 'experience_years',
             'preferred_category', 'preferred_work_modes', 'preferred_location',
             'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
-            'state',
+            'state', 'description', 'website',
         ]
 
     PROFILE_FIELDS = {
         'headline', 'bio', 'education', 'experience_years',
         'preferred_category', 'preferred_work_modes', 'preferred_location',
         'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
-        'state',
+        'state', 'description', 'website',
     }
 
     def validate_role(self, value):
@@ -192,6 +258,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 sector=profile_data.get('sector', ''),
                 size=profile_data.get('size', ''),
                 state=profile_data.get('state', ''),
+                description=profile_data.get('description', ''),
+                website=profile_data.get('website', ''),
             )
         return user
 
@@ -221,6 +289,8 @@ class ProfileUpdateSerializer(serializers.Serializer):
     preferred_location = serializers.CharField(required=False, allow_blank=True, max_length=120)
     resume = serializers.FileField(required=False, allow_null=True)
     photo = serializers.ImageField(required=False, allow_null=True)
+    cover = serializers.ImageField(required=False, allow_null=True)
+    certifications = serializers.CharField(required=False, allow_blank=True)
 
     # Company profile fields
     company_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
@@ -238,11 +308,11 @@ class ProfileUpdateSerializer(serializers.Serializer):
     CANDIDATE_FIELDS = {
         'headline', 'bio', 'education', 'experience_years', 'skills',
         'preferred_category', 'preferred_work_modes', 'preferred_location',
-        'resume', 'photo',
+        'resume', 'photo', 'cover', 'certifications',
     }
     COMPANY_FIELDS = {
         'company_name', 'legal_name', 'trade_name', 'cnpj', 'sector', 'size',
-        'state', 'description', 'website', 'logo',
+        'state', 'description', 'website', 'logo', 'cover',
     }
 
     def update(self, instance, validated_data):

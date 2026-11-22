@@ -6,6 +6,7 @@ import type { CompanyStats, Paginated, Job } from '../../types'
 import { JobCard } from '../../components/JobCard'
 import { StatusBadge } from '../../components/StatusBadge'
 import { Spinner, StatCard } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 export function CompanyDashboard() {
   const { user } = useAuth()
@@ -27,18 +28,17 @@ export function CompanyDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {user?.company_profile?.company_name ?? 'Empresa'} — Painel
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">Gerencie suas vagas e candidaturas.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/company/matching" className="btn-accent">✨ Matching</Link>
-          <Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>
-        </div>
-      </div>
+      <AreaHeader
+        eyebrow="EMPRESA / PAINEL DE VAGAS"
+        title={user?.company_profile?.company_name ?? 'Painel de vagas'}
+        subtitle="Gerencie suas vagas, acompanhe candidaturas e encontre os melhores perfis."
+        actions={
+          <>
+            <Link to="/company/matching" className="btn-accent">Matching</Link>
+            <Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>
+          </>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard label="Vagas publicadas" value={stats?.totals.published_jobs ?? 0} />

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../lib/api'
 import type { Job, Skill } from '../../types'
 import { ErrorAlert, Field, Spinner } from '../../components/ui'
+import { AreaHeader, NoteCard, StepNav } from '../../components/figma'
 import {
   CATEGORY_LABELS, JOB_STATUS_LABELS, JOB_TYPE_LABELS, SENIORITY_LABELS,
   WORK_MODE_LABELS, label,
@@ -139,23 +140,15 @@ export function JobForm() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">{isEdit ? 'Editar vaga' : 'Publicar vaga'}</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        {isEdit ? 'Atualize os dados da vaga.' : 'Preencha as 3 etapas para publicar uma nova oportunidade.'}
-      </p>
+      <AreaHeader
+        eyebrow="EMPRESA / PUBLICAR VAGA"
+        title={isEdit ? 'Editar vaga' : 'Publicar vaga'}
+        subtitle={isEdit ? 'Atualize os dados da vaga.' : 'Preencha as 3 etapas para publicar uma nova oportunidade.'}
+        backTo="/company/jobs"
+        backLabel="Minhas vagas"
+      />
 
-      {/* Step indicator */}
-      <div className="mt-6 flex items-center gap-2">
-        {STEPS.map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
-            <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-              i <= step ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-400'
-            }`}>{i + 1}</span>
-            <span className={`hidden text-sm font-medium sm:inline ${i <= step ? 'text-slate-800' : 'text-slate-400'}`}>{s}</span>
-            {i < STEPS.length - 1 && <span className="mx-1 h-px w-6 bg-slate-200" />}
-          </div>
-        ))}
-      </div>
+      <StepNav steps={STEPS} current={step} />
 
       <form onSubmit={submit} className="mt-6 space-y-6">
         {/* Step 1 — dados e descrição */}
@@ -247,15 +240,27 @@ export function JobForm() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-              <p className="font-semibold text-slate-700">Como o matching funciona</p>
-              <ul className="mt-1 list-inside list-disc space-y-0.5">
-                <li>Essenciais: 50 pts — cobertura das competências obrigatórias</li>
-                <li>Desejáveis: 10 pts — diferenciais</li>
-                <li>Experiência: 25 pts — anos vs. senioridade + similaridade textual</li>
-                <li>Preferências: 15 pts — local, modelo de trabalho e área</li>
-              </ul>
+            {/* Matching weights — Figma criteria bar */}
+            <div>
+              <p className="mb-2 text-sm font-semibold text-slate-700">Critérios de matching</p>
+              <div className="flex h-3 w-full overflow-hidden rounded-full">
+                <div className="bg-brand-500" style={{ width: '50%' }} title="Essenciais 50 pts" />
+                <div className="bg-accent-500" style={{ width: '10%' }} title="Desejáveis 10 pts" />
+                <div className="bg-amber-400" style={{ width: '25%' }} title="Experiência 25 pts" />
+                <div className="bg-sky-400" style={{ width: '15%' }} title="Preferências 15 pts" />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                <span><strong className="text-brand-700">50</strong> essenciais</span>
+                <span><strong className="text-accent-700">10</strong> desejáveis</span>
+                <span><strong className="text-amber-600">25</strong> experiência</span>
+                <span><strong className="text-sky-600">15</strong> preferências</span>
+              </div>
             </div>
+
+            <NoteCard title="Matching não decide por você">
+              Os critérios acima geram um score explicável para ranquear candidatos.
+              Nenhuma candidatura é aprovada ou rejeitada automaticamente — a decisão é sempre sua.
+            </NoteCard>
           </div>
         )}
 

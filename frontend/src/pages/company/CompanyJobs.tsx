@@ -4,6 +4,7 @@ import api from '../../lib/api'
 import type { Job, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 import { JOB_STATUS_LABELS, WORK_MODE_LABELS, label } from '../../lib/labels'
 
 const FILTERS: { value: string; label: string }[] = [
@@ -41,13 +42,12 @@ export function CompanyJobs() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Minhas vagas</h1>
-          <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} no total` : ''}</p>
-        </div>
-        <Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>
-      </div>
+      <AreaHeader
+        eyebrow="EMPRESA / PAINEL DE VAGAS"
+        title="Minhas vagas"
+        subtitle={data ? `${data.count} vaga(s) no total` : 'Gerencie rascunhos, vagas publicadas e pausadas.'}
+        actions={<Link to="/company/jobs/new" className="btn-primary">+ Publicar vaga</Link>}
+      />
 
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (

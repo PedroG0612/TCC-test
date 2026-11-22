@@ -12,6 +12,7 @@ from api.views import (
     PasswordChangeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    PublicProfileView,
     RecommendedCandidatesView,
     RecommendedJobsView,
     RegisterView,
@@ -41,6 +42,12 @@ urlpatterns = [
     # Matching recommendations
     path('matching/jobs/', RecommendedJobsView.as_view(), name='matching-jobs'),
     path('matching/candidates/', RecommendedCandidatesView.as_view(), name='matching-candidates'),
+
+    # Public read-only profiles (/u/<username>)
+    path('public-profiles/<str:username>/', PublicProfileView.as_view(), name='public-profile'),
+
+    # Social feed
+    path('feed/', include('feed.urls')),
 
     # Reports
     path('reports/', include(report_urls)),

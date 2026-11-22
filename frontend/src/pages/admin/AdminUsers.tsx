@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import api from '../../lib/api'
 import type { Paginated, User } from '../../types'
 import { ErrorAlert, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 const ROLES = ['candidate', 'company', 'admin']
 
@@ -42,8 +43,7 @@ export function AdminUsers() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Gestão de usuários</h1>
-      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} usuários cadastrados` : ''}</p>
+      <AreaHeader eyebrow="ADMIN / USUÁRIOS" title="Gestão de usuários" subtitle={data ? `${data.count} usuários cadastrados` : undefined} />
 
       <div className="mt-5 flex flex-wrap gap-3">
         <input

@@ -4,6 +4,7 @@ import api from '../../lib/api'
 import type { Application, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 const STATUSES = ['applied', 'under_review', 'interview', 'rejected', 'hired']
 
@@ -34,8 +35,7 @@ export function AdminApplications() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Acompanhamento de candidaturas</h1>
-      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} candidaturas` : ''}</p>
+      <AreaHeader eyebrow="ADMIN / CANDIDATURAS" title="Acompanhamento de candidaturas" subtitle={data ? `${data.count} candidaturas` : undefined} />
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button onClick={() => setStatus('')} className={`badge px-3 py-1.5 text-sm ring-1 ring-inset ${!status ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}>All</button>

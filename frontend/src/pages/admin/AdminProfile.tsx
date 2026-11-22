@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { ErrorAlert, Field, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 export function AdminProfile() {
   const { user, refresh } = useAuth()
@@ -64,7 +65,7 @@ export function AdminProfile() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Minha conta</h1>
+      <AreaHeader eyebrow="ADMIN / PERFIL" title="Minha conta" />
 
       <form onSubmit={saveProfile} className="card mt-6 space-y-4 p-6">
         <h2 className="font-semibold text-slate-900">Perfil</h2>

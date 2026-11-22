@@ -2,6 +2,7 @@ import { useState } from 'react'
 import api from '../../lib/api'
 import { useAuth } from '../../context/AuthContext'
 import { ErrorAlert } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 const DATASETS = [
   { value: 'applications', label: 'Candidaturas' },
@@ -48,11 +49,11 @@ export function AdminReports() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Relatórios e exportações</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Gere relatórios com dados reais da plataforma. Admins can export platform-wide data;
-        companies export their own vacancies and applications.
-      </p>
+      <AreaHeader
+        eyebrow="ADMIN / RELATÓRIOS"
+        title="Relatórios e exportações"
+        subtitle="Gere relatórios com dados reais da plataforma. Admins podem exportar dados de toda a plataforma; empresas exportam as próprias vagas e candidaturas."
+      />
 
       <div className="card mt-6 space-y-5 p-6">
         <div>

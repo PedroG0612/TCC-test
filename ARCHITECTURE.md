@@ -56,8 +56,11 @@ PostgreSQL instance.
 ### Matching (`matching/engine.py`)
 
 - `profile_text()` on profiles/jobs produces a normalized text corpus.
-- `TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True)` + `cosine_similarity`.
-- Score = 85% cosine similarity + 15% Jaccard skill overlap, scaled to 0–100.
+- Explainable weighted model: essential skills 50 pts, desired skills 10 pts,
+  experience 25 pts, work preferences 15 pts — each criterion returns
+  matched/partial/missing evidence (see `docs/MATCHING.md`).
+- `TfidfVectorizer(ngram_range=(1,2), sublinear_tf=True)` + `cosine_similarity`
+  feeds the text-evidence signal inside the experience criterion.
 - Batch functions rank all jobs for a candidate and all candidates for a job.
 
 ### Reports (`reports/`)

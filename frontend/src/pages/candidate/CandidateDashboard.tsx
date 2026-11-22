@@ -7,6 +7,7 @@ import { ScoreBadge } from '../../components/ScoreBadge'
 import { StatusBadge } from '../../components/StatusBadge'
 import { Spinner, StatCard } from '../../components/ui'
 import { WORK_MODE_LABELS, label } from '../../lib/labels'
+import { AreaHeader } from '../../components/figma'
 
 export function CandidateDashboard() {
   const { user } = useAuth()
@@ -31,18 +32,17 @@ export function CandidateDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Olá, {user?.first_name || user?.username} 👋
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">Veja o que está acontecendo na sua busca por vagas.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/matching" className="btn-accent">✨ Ver vagas para mim</Link>
-          <Link to="/jobs" className="btn-outline">Buscar vagas</Link>
-        </div>
-      </div>
+      <AreaHeader
+        eyebrow="CANDIDATO / VISÃO GERAL"
+        title={`Olá, ${user?.first_name || user?.username}`}
+        subtitle="Veja o que está acontecendo na sua busca por vagas."
+        actions={
+          <>
+            <Link to="/matching" className="btn-accent">Ver vagas para mim</Link>
+            <Link to="/jobs" className="btn-outline">Buscar vagas</Link>
+          </>
+        }
+      />
 
       {!profileComplete && (
         <div className="card mb-6 flex flex-wrap items-center justify-between gap-3 border-accent-200 bg-accent-50 p-5">

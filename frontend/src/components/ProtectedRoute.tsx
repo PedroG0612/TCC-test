@@ -9,7 +9,7 @@ export function ProtectedRoute({ roles }: { roles?: string[] }) {
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />
   if (roles && !roles.includes(user.role)) {
-    const home = user.role === 'candidate' ? '/dashboard' : user.role === 'company' ? '/company/dashboard' : '/admin/dashboard'
+    const home = '/home'
     return <Navigate to={home} replace />
   }
   return <Outlet />

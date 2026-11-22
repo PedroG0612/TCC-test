@@ -3,6 +3,7 @@ import { AuthProvider } from './context/AuthContext'
 import { Navbar } from './components/Navbar'
 import { Footer } from './components/Footer'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Landing } from './pages/Landing'
 import { About } from './pages/About'
 import { Jobs } from './pages/Jobs'
@@ -28,6 +29,8 @@ import { AdminJobs } from './pages/admin/AdminJobs'
 import { AdminApplications } from './pages/admin/AdminApplications'
 import { AdminReports } from './pages/admin/AdminReports'
 import { AdminProfile } from './pages/admin/AdminProfile'
+import { Feed } from './pages/Feed'
+import { PublicProfile } from './pages/PublicProfile'
 
 export default function App() {
   return (
@@ -36,6 +39,7 @@ export default function App() {
         <div className="flex min-h-screen flex-col">
           <Navbar />
           <main className="flex-1">
+            <ErrorBoundary>
             <Routes>
               {/* Public */}
               <Route path="/" element={<Landing />} />
@@ -46,6 +50,12 @@ export default function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/u/:username" element={<PublicProfile />} />
+
+              {/* Authenticated home feed — all roles */}
+              <Route element={<ProtectedRoute roles={['candidate', 'company', 'admin']} />}>
+                <Route path="/home" element={<Feed />} />
+              </Route>
 
               {/* Candidate */}
               <Route element={<ProtectedRoute roles={['candidate']} />}>
@@ -80,6 +90,7 @@ export default function App() {
               {/* Fallback */}
               <Route path="*" element={<Landing />} />
             </Routes>
+            </ErrorBoundary>
           </main>
           <Footer />
         </div>

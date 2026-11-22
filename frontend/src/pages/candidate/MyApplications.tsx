@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../../lib/api'
+import { useAuth } from '../../context/AuthContext'
 import type { Application, ApplicationStatus, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
+import { AreaHeader, NoteCard } from '../../components/figma'
 import { APPLICATION_STATUS_LABELS, label } from '../../lib/labels'
 
 const STATUSES: ApplicationStatus[] = ['applied', 'under_review', 'interview', 'rejected', 'hired']
@@ -45,6 +47,7 @@ function ApplicationTimeline({ app }: { app: Application }) {
 }
 
 export function MyApplications() {
+  const { user } = useAuth()
   const [data, setData] = useState<Paginated<Application> | null>(null)
   const [status, setStatus] = useState('')
   const [loading, setLoading] = useState(true)
@@ -59,16 +62,36 @@ export function MyApplications() {
 
   useEffect(fetchApps, [fetchApps])
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Minhas candidaturas</h1>
-          <p className="mt-1 text-sm text-slate-500">Acompanhe o status de cada candidatura enviada.</p>
-        </div>
-        <Link to="/jobs" className="btn-primary">Buscar vagas</Link>
-      </div>
+  const results = data?.results ?? []
+  const inAnalysis = results.filter((a) => a.status === 'applied' || a.status === 'under_review').length
+  const interviews = results.filter((a) => a.status === 'interview').length
 
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+      <AreaHeader
+        eyebrow="CANDIDATO / MINHAS CANDIDATURAS"
+        title="Minhas candidaturas"
+        subtitle="Acompanhe o status de cada candidatura enviada e o próximo passo de cada processo."
+        actions={<Link to="/jobs" className="btn-primary">Buscar vagas</Link>}
+      />
+
+      {data && results.length > 0 && (
+        <div className="mb-6 grid grid-cols-3 gap-3">
+          {[
+            { label: 'Candidaturas', value: data.count },
+            { label: 'Em análise', value: inAnalysis },
+            { label: 'Entrevistas', value: interviews },
+          ].map((s) => (
+            <div key={s.label} className="card p-4 text-center">
+              <p className="text-2xl font-extrabold text-slate-900">{s.value}</p>
+              <p className="text-xs font-medium text-slate-500">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+        <div>
       <div className="mb-4 flex flex-wrap gap-2">
         <button
           onClick={() => setStatus('')}
@@ -142,6 +165,29 @@ export function MyApplications() {
           ))}
         </div>
       )}
+        </div>
+
+        {/* Profile sidebar — Figma "Sua base profissional" */}
+        <aside className="space-y-4">
+          <div className="card p-5">
+            <p className="eyebrow">Seu perfil</p>
+            <p className="mt-2 font-bold text-slate-900">{user?.first_name} {user?.last_name}</p>
+            <p className="text-sm text-slate-500">{user?.candidate_profile?.headline || 'Candidato(a)'}</p>
+            {user?.city && <p className="mt-1 text-xs text-slate-400">{user.city}</p>}
+            <Link to="/profile" className="mt-3 inline-block text-sm font-semibold text-brand-600 hover:underline">
+              Editar perfil →
+            </Link>
+          </div>
+          <NoteCard title="O que significam os status">
+            <ul className="space-y-1.5">
+              <li><strong>Candidatura enviada</strong> — recebida pela empresa.</li>
+              <li><strong>Em análise</strong> — seu perfil está sendo avaliado.</li>
+              <li><strong>Entrevista</strong> — a empresa quer conversar com você.</li>
+              <li><strong>Contratado(a)</strong> — parabéns!</li>
+            </ul>
+          </NoteCard>
+        </aside>
+      </div>
     </div>
   )
 }

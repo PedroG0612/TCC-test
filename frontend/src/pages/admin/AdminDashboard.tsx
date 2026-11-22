@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import api from '../../lib/api'
 import type { PlatformOverview } from '../../types'
 import { Spinner, StatCard } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 export function AdminDashboard() {
   const [stats, setStats] = useState<PlatformOverview | null>(null)
@@ -22,8 +23,7 @@ export function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Painel do administrador</h1>
-      <p className="mt-1 text-sm text-slate-500">Estatísticas e relatórios de toda a plataforma.</p>
+      <AreaHeader eyebrow="ADMIN / PAINEL" title="Painel do administrador" subtitle="Estatísticas e relatórios de toda a plataforma." />
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Usuários" value={t.users} />
@@ -43,7 +43,7 @@ export function AdminDashboard() {
               <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
                 <span className="text-xs font-semibold text-slate-500">{m.count}</span>
                 <div
-                  className="w-full rounded-t-lg bg-gradient-to-t from-brand-600 to-accent-500"
+                  className="w-full rounded-t-lg bg-brand-600"
                   style={{ height: `${Math.max(4, (m.count / maxMonthly) * 100)}%` }}
                 />
                 <span className="text-[10px] text-slate-400">{m.month.slice(5)}</span>
@@ -66,7 +66,7 @@ export function AdminDashboard() {
                     <span className="text-slate-500">{c.count}</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-accent-500" style={{ width: `${(c.count / maxCategory) * 100}%` }} />
+                    <div className="h-2 rounded-full bg-brand-500" style={{ width: `${(c.count / maxCategory) * 100}%` }} />
                   </div>
                 </div>
               ))}

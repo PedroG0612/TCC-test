@@ -4,6 +4,7 @@ import api from '../../lib/api'
 import type { Job, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 
 export function AdminJobs() {
   const [data, setData] = useState<Paginated<Job> | null>(null)
@@ -27,8 +28,7 @@ export function AdminJobs() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-bold text-slate-900">Gestão de vagas</h1>
-      <p className="mt-1 text-sm text-slate-500">{data ? `${data.count} vagas` : ''}</p>
+      <AreaHeader eyebrow="ADMIN / VAGAS" title="Gestão de vagas" subtitle={data ? `${data.count} vagas` : undefined} />
 
       <div className="mt-5 flex flex-wrap gap-3">
         <input

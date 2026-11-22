@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ErrorAlert, Field } from '../components/ui'
 
@@ -7,7 +7,6 @@ export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [params] = useSearchParams()
   const [form, setForm] = useState({ username: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,8 +19,8 @@ export function Login() {
     setLoading(true)
     try {
       await login(form.username, form.password)
-      const role = params.get('role')
-      const home = from ?? (role === 'company' ? '/company/dashboard' : role === 'admin' ? '/admin/dashboard' : '/dashboard')
+      // All roles land on the authenticated home feed.
+      const home = from ?? '/home'
       navigate(home, { replace: true })
     } catch {
       setError('E-mail/usuário ou senha inválidos.')
@@ -33,11 +32,14 @@ export function Login() {
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-12">
       <div className="card w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold text-slate-900">Bem-vindo de volta</h1>
-        <p className="mt-1 text-sm text-slate-500">Entre na sua conta Appliety</p>
+        <div className="flex items-center gap-2">
+          <img src="/logo.png" alt="Appliety" className="h-9 w-auto" />
+        </div>
+        <h1 className="mt-5 text-2xl font-bold text-slate-900">Entrar</h1>
+        <p className="mt-1 text-sm text-slate-500">Acesse a sua conta com seu e-mail.</p>
         <form onSubmit={submit} className="mt-6 space-y-4">
           <Field label="E-mail ou usuário">
-            <input className="input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required autoFocus />
+            <input className="input" type="email" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required autoFocus />
           </Field>
           <Field label="Senha">
             <input className="input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />

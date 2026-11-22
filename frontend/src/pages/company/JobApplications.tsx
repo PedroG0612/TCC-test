@@ -4,6 +4,7 @@ import api from '../../lib/api'
 import type { Application, Job, Paginated } from '../../types'
 import { StatusBadge } from '../../components/StatusBadge'
 import { EmptyState, ErrorAlert, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 import { APPLICATION_STATUS_LABELS as STATUS_LABELS, label } from '../../lib/labels'
 
 const NEXT_STATUSES = ['applied', 'under_review', 'interview', 'rejected', 'hired']
@@ -47,16 +48,14 @@ export function JobApplications() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <Link to="/company/jobs" className="text-sm font-medium text-slate-500 hover:text-brand-600">← Minhas vagas</Link>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{job.title}</h1>
-          <p className="text-sm text-slate-500">
-            {job.company_name} · {job.location}
-          </p>
-        </div>
-        <Link to={`/company/matching?job=${job.id}`} className="btn-accent">✨ Ranking de candidatos</Link>
-      </div>
+      <AreaHeader
+        eyebrow="EMPRESA / CANDIDATURAS"
+        title={job.title}
+        subtitle={`${job.company_name} · ${job.location}`}
+        backTo="/company/jobs"
+        backLabel="Minhas vagas"
+        actions={<Link to={`/company/matching?job=${job.id}`} className="btn-accent">Ranking de candidatos</Link>}
+      />
 
       <div className="mt-6 mb-4 flex flex-wrap gap-2">
         <button onClick={() => setStatus('')} className={`badge px-3 py-1.5 text-sm ring-1 ring-inset ${!status ? 'bg-brand-600 text-white ring-brand-600' : 'bg-white text-slate-600 ring-slate-200'}`}>Todas</button>

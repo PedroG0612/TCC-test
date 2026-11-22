@@ -5,6 +5,7 @@ import type { CandidateMatch, Job, Paginated } from '../../types'
 import { ScoreBadge } from '../../components/ScoreBadge'
 import { MatchBreakdownView } from '../../components/MatchBreakdown'
 import { EmptyState, Spinner } from '../../components/ui'
+import { AreaHeader } from '../../components/figma'
 import { EDUCATION_STATUS_LABELS, WORK_MODE_LABELS, label } from '../../lib/labels'
 
 export function CompanyMatching() {
@@ -51,14 +52,11 @@ export function CompanyMatching() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
-      <div className="mb-2 flex items-center gap-2">
-        <span className="text-2xl">✨</span>
-        <h1 className="text-2xl font-bold text-slate-900">Ranking de candidatos</h1>
-      </div>
-      <p className="mb-6 max-w-2xl text-sm text-slate-500">
-        Escolha uma vaga para ranquear candidatos por compatibilidade. O score é um apoio à
-        decisão — analise o currículo antes de aprovar ou rejeitar.
-      </p>
+      <AreaHeader
+        eyebrow="EMPRESA / MATCHING"
+        title="Ranking de candidatos"
+        subtitle="Escolha uma vaga para ranquear candidatos por compatibilidade. O score é um apoio à decisão — analise o currículo antes de aprovar ou rejeitar."
+      />
 
       <div className="card mb-4 grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-2">
@@ -108,7 +106,7 @@ export function CompanyMatching() {
             return (
               <div key={c.id} className="card p-5">
                 <div className="flex flex-wrap items-start gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-500 to-brand-500 text-sm font-bold text-white">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white">
                     {i + 1}
                   </div>
                   <div className="min-w-0 flex-1">

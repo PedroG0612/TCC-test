@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'jobs',
     'matching',
     'reports',
+    'feed',
     'api',
 ]
 

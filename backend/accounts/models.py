@@ -70,6 +70,8 @@ class CandidateProfile(models.Model):
 
     resume = models.FileField(upload_to='resumes/', blank=True, null=True)
     photo = models.ImageField(upload_to='photos/', blank=True, null=True)
+    cover = models.ImageField(upload_to='covers/', blank=True, null=True)
+    certifications = models.TextField(blank=True)
 
     class Meta:
         verbose_name = 'candidate profile'
@@ -167,6 +169,7 @@ class CompanyProfile(models.Model):
     description = models.TextField(blank=True)
     website = models.URLField(blank=True)
     logo = models.ImageField(upload_to='logos/', blank=True, null=True)
+    cover = models.ImageField(upload_to='covers/', blank=True, null=True)
 
     class Meta:
         verbose_name = 'company profile'
